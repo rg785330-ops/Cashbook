@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0F1A15">
+<title>Cashbook</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --paper:#FAFAF7;
+  --ink:#16211C;
+  --ink-soft:#5D6B64;
+  --ink-faint:#93A099;
+  --rule:#E2E6E0;
+  --rule-strong:#C6CDC5;
+  --in:#12724A;
+  --in-bg:#E8F3ED;
+  --out:#AF2A1E;
+  --out-bg:#F8EAE8;
+  --field:#FFFFFF;
+  --shadow:0 -1px 0 var(--rule);
+  --sheet-shadow:0 -8px 40px rgba(22,33,28,.22);
+  --mono:ui-monospace,"Roboto Mono","DroidSansMono","SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Roboto","Segoe UI",sans-serif;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.45;overscroll-behavior-y:none;
+}
+button,input,select{font:inherit;color:inherit}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+/* ---------- shell ---------- */
+#app{display:flex;flex-direction:column;height:100%}
+#scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px}
+
+/* ---------- header / balances ---------- */
+header{
+  padding:14px 18px 0;background:var(--paper);
+  position:sticky;top:0;z-index:5;
+  padding-top:calc(14px + env(safe-area-inset-top,0px));
+}
+.bar{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.brand{
+  font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.gear{
+  background:none;border:0;padding:6px;margin:-6px -6px -6px 0;
+  color:var(--ink-soft);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  font-weight:600;cursor:pointer;
+}
+.gear:active{color:var(--ink)}
+
+.ledger{border-top:1px solid var(--rule-strong);margin-bottom:10px}
+.acct{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding:11px 0;border-bottom:1px solid var(--rule);
+}
+.acct-name{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.acct-val{font-size:20px;font-weight:500}
+.acct.total{border-bottom:2px solid var(--ink);padding-top:13px}
+.acct.total .acct-name{color:var(--ink);font-weight:700}
+.acct.total .acct-val{font-size:27px;font-weight:600;letter-spacing:-.02em}
+.neg{color:var(--out)}
+
+/* ---------- transaction list ---------- */
+.daygroup{margin-top:22px}
+.dayhead{
+  display:flex;align-items:baseline;justify-content:space-between;
+  padding:0 18px 7px;
+}
+.daydate{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.daynet{font-size:12px;color:var(--ink-soft)}
+
+.row{
+  display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:baseline;
+  width:100%;text-align:left;background:none;border:0;
+  padding:10px 18px;border-top:1px solid var(--rule);cursor:pointer;
+}
+.row:active{background:#F0F2EE}
+.row:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+.r-head{font-size:15px;font-weight:600;line-height:1.25}
+.r-amt{font-size:15px;font-weight:600;white-space:nowrap}
+.r-amt.in{color:var(--in)}
+.r-amt.out{color:var(--out)}
+.r-meta{font-size:12.5px;color:var(--ink-soft);line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.r-bal{font-size:12px;color:var(--ink-faint);white-space:nowrap}
+.tag{
+  display:inline-block;font-size:10px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-soft);
+  border:1px solid var(--rule-strong);border-radius:3px;padding:0 4px;margin-right:6px;
+  position:relative;top:-1px;
+}
+
+/* ---------- empty ---------- */
+.empty{padding:56px 30px;text-align:center;color:var(--ink-soft)}
+.empty h2{font-size:17px;color:var(--ink);margin:0 0 6px;font-weight:600}
+.empty p{margin:0;font-size:14px;line-height:1.5}
+
+/* ---------- bottom actions ---------- */
+.actions{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  padding:10px 14px calc(10px + var(--safe-b));
+  background:var(--paper);box-shadow:var(--shadow);
+}
+.act{
+  border:1px solid;border-radius:11px;padding:15px 8px;
+  font-size:14px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  cursor:pointer;
+}
+.act:active{transform:translateY(1px)}
+.act.out{background:var(--out-bg);border-color:var(--out);color:var(--out)}
+.act.in{background:var(--in-bg);border-color:var(--in);color:var(--in)}
+
+/* ---------- sheet ---------- */
+.scrim{
+  position:fixed;inset:0;background:rgba(22,33,28,.42);
+  opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;
+}
+.scrim.open{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:21;
+  background:var(--paper);border-radius:16px 16px 0 0;box-shadow:var(--sheet-shadow);
+  transform:translateY(101%);transition:transform .24s cubic-bezier(.2,.8,.3,1);
+  max-height:94dvh;display:flex;flex-direction:column;
+}
+.sheet.open{transform:translateY(0)}
+.sheet-top{padding:14px 18px 10px;border-bottom:1px solid var(--rule)}
+.grab{width:34px;height:4px;border-radius:2px;background:var(--rule-strong);margin:0 auto 12px}
+.sheet-title{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:0}
+.sheet-title.in{color:var(--in)}
+.sheet-title.out{color:var(--out)}
+.sheet-body{padding:16px 18px 6px;overflow-y:auto}
+.sheet-foot{
+  padding:12px 18px calc(14px + var(--safe-b));border-top:1px solid var(--rule);
+  display:grid;grid-template-columns:auto 1fr;gap:10px;
+}
+
+label.f{display:block;margin-bottom:16px}
+.f-label{
+  display:block;font-size:11px;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;
+}
+.f-in{
+  width:100%;background:var(--field);border:1px solid var(--rule-strong);
+  border-radius:9px;padding:12px 13px;font-size:16px;
+}
+.f-in:focus{outline:2px solid var(--ink);outline-offset:-1px;border-color:var(--ink)}
+.amount-in{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:29px;font-weight:600;padding:10px 13px}
+.amount-in.in{color:var(--in)}
+.amount-in.out{color:var(--out)}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{
+  background:var(--field);border:1px solid var(--rule-strong);border-radius:9px;
+  padding:13px 6px;font-size:13px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-soft);cursor:pointer;
+}
+.seg button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{
+  background:none;border:1px solid var(--rule-strong);border-radius:20px;
+  padding:5px 11px;font-size:13px;color:var(--ink-soft);cursor:pointer;
+}
+.chip:active{border-color:var(--ink);color:var(--ink)}
+
+.btn{
+  border-radius:10px;padding:15px 18px;font-size:14px;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;cursor:pointer;border:1px solid;
+}
+.btn-ghost{background:none;border-color:var(--rule-strong);color:var(--ink-soft)}
+.btn-danger{background:none;border-color:var(--out);color:var(--out)}
+.btn-save{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.btn-save.in{background:var(--in);border-color:var(--in)}
+.btn-save.out{background:var(--out);border-color:var(--out)}
+.btn:disabled{opacity:.4}
+
+.err{color:var(--out);font-size:13px;margin:-8px 0 14px;min-height:0}
+.note{font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin:2px 0 18px}
+.setrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(96px + var(--safe-b));transform:translate(-50%,10px);
+  background:var(--ink);color:var(--paper);font-size:13.5px;font-weight:500;
+  padding:10px 16px;border-radius:8px;opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;z-index:40;max-width:88vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms !important;animation-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="bar">
+      <span class="brand">Cashbook</span>
+      <button class="gear" id="btnSettings">Settings</button>
+    </div>
+    <div class="ledger">
+      <div class="acct">
+        <span class="acct-name">Cash in hand</span>
+        <span class="acct-val num" id="balCash">0</span>
+      </div>
+      <div class="acct">
+        <span class="acct-name">Cash in bank</span>
+        <span class="acct-val num" id="balBank">0</span>
+      </div>
+      <div class="acct total">
+        <span class="acct-name">Total</span>
+        <span class="acct-val num" id="balTotal">0</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="scroll"><div id="list"></div></div>
+
+  <div class="actions">
+    <button class="act out" id="btnOut">Cash out</button>
+    <button class="act in" id="btnIn">Cash in</button>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- entry sheet -->
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet-top">
+    <div class="grab"></div>
+    <h1 class="sheet-title" id="sheetTitle">Cash in</h1>
+  </div>
+  <div class="sheet-body">
+    <label class="f">
+      <span class="f-label">Date &amp; time</span>
+      <input class="f-in" type="datetime-local" id="fDate">
+    </label>
+
+    <label class="f">
+      <span class="f-label">Amount</span>
+      <input class="f-in amount-in num" type="text" inputmode="decimal" id="fAmount" placeholder="0" autocomplete="off">
+    </label>
+    <div class="err" id="fErr"></div>
+
+    <label class="f">
+      <span class="f-label">Head of account</span>
+      <input class="f-in" type="text" id="fHead" list="headList" placeholder="e.g. Fuel, Salary, Fees" autocomplete="off">
+      <datalist id="headList"></datalist>
+      <span class="chips" id="headChips"></span>
+    </label>
+
+    <label class="f">
+      <span class="f-label">Details</span>
+      <input class="f-in" type="text" id="fDetail" placeholder="What was this for?" autocomplete="off">
+    </label>
+
+    <div class="f">
+      <span class="f-label">Paid from / received in</span>
+      <div class="seg">
+        <button type="button" id="segCash" aria-pressed="true">Cash</button>
+        <button type="button" id="segBank" aria-pressed="false">Bank</button>
+      </div>
+    </div>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" id="btnCancel">Cancel</button>
+    <button class="btn btn-save" id="btnSave">Save</button>
+  </div>
+</div>
+
+<!-- settings sheet -->
+<div class="sheet" id="setSheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+  <div class="sheet-top">
+    <div class="grab"></div>
+    <h1 class="sheet-title" id="setTitle">Settings</h1>
+  </div>
+  <div class="sheet-body">
+    <p class="note">Opening balances are what you had before you started using this app. Everything you record is added on top of them.</p>
+    <div class="setrow">
+      <label class="f">
+        <span class="f-label">Opening cash</span>
+        <input class="f-in num" type="text" inputmode="decimal" id="sCash" autocomplete="off">
+      </label>
+      <label class="f">
+        <span class="f-label">Opening bank</span>
+        <input class="f-in num" type="text" inputmode="decimal" id="sBank" autocomplete="off">
+      </label>
+    </div>
+    <p class="note">Your records live on this phone only. Export a backup now and then — the file opens directly in Excel.</p>
+    <button class="btn btn-ghost" id="btnExport" style="width:100%;margin-bottom:12px">Export to Excel (CSV)</button>
+    <button class="btn btn-danger" id="btnWipe" style="width:100%">Erase everything</button>
+    <p class="note" id="storeWarn" style="display:none;color:var(--out)"></p>
+  </div>
+  <div class="sheet-foot" style="grid-template-columns:1fr">
+    <button class="btn btn-save" id="btnSetDone">Done</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ---------------- storage (survives reload; falls back to memory) ---------------- */
+var KEY = "cashbook.v1";
+var memory = null, persistent = true;
+function load(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ persistent = false; return memory; }
+}
+function persist(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch(e){ persistent = false; memory = state; }
+}
+
+var state = load() || { openingCash:0, openingBank:0, txns:[] };
+if(!Array.isArray(state.txns)) state.txns = [];
+
+/* ---------------- helpers ---------------- */
+var fmt = new Intl.NumberFormat("en-PK",{minimumFractionDigits:0,maximumFractionDigits:2});
+function money(n){ return (n<0 ? "\u2212" : "") + fmt.format(Math.abs(n)); }
+function parseAmt(s){
+  var n = parseFloat(String(s).replace(/[^0-9.\-]/g,""));
+  return isFinite(n) ? n : NaN;
+}
+function pad(n){ return n<10 ? "0"+n : ""+n; }
+function toLocalInput(d){
+  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
+}
+function fromLocalInput(v){
+  var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(v);
+  if(!m) return new Date();
+  return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5]);
+}
+function dayKey(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function esc(s){
+  return String(s).replace(/[&<>"]/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];
+  });
+}
+
+var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+var MONS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function dayLabel(d){
+  var today = new Date(), y = new Date(today.getTime()-86400000);
+  if(dayKey(d)===dayKey(today)) return "Today";
+  if(dayKey(d)===dayKey(y)) return "Yesterday";
+  var s = d.getDate()+" "+MONS[d.getMonth()];
+  if(d.getFullYear()!==today.getFullYear()) s += " " + d.getFullYear();
+  return s + " \u00B7 " + DAYS[d.getDay()].slice(0,3);
+}
+function timeLabel(d){
+  var h = d.getHours(), ap = h>=12 ? "PM" : "AM", hh = h%12; if(hh===0) hh=12;
+  return hh+":"+pad(d.getMinutes())+" "+ap;
+}
+
+/* ---------------- computation ---------------- */
+function sorted(){
+  return state.txns.slice().sort(function(a,b){
+    if(a.ts === b.ts) return a.id < b.id ? -1 : 1;
+    return a.ts < b.ts ? -1 : 1;
+  });
+}
+function balances(){
+  var c = +state.openingCash || 0, b = +state.openingBank || 0;
+  state.txns.forEach(function(t){
+    var s = t.type==="in" ? +t.amount : -t.amount;
+    if(t.account==="bank") b += s; else c += s;
+  });
+  return { cash:c, bank:b, total:c+b };
+}
+
+/* ---------------- render ---------------- */
+var el = function(id){ return document.getElementById(id); };
+
+function setBal(node, v){
+  node.textContent = money(v);
+  node.classList.toggle("neg", v < 0);
+}
+
+function render(){
+  var b = balances();
+  setBal(el("balCash"), b.cash);
+  setBal(el("balBank"), b.bank);
+  setBal(el("balTotal"), b.total);
+
+  var list = el("list");
+  var rows = sorted();
+
+  if(!rows.length){
+    list.innerHTML = '<div class="empty"><h2>No entries yet</h2>' +
+      '<p>Tap <b>Cash in</b> when money comes in, <b>Cash out</b> when it goes out. ' +
+      'Set your opening balances in Settings first.</p></div>';
+    return;
+  }
+
+  /* running balance after each entry, oldest first */
+  var run = (+state.openingCash||0) + (+state.openingBank||0);
+  var runMap = {};
+  rows.forEach(function(t){
+    run += t.type==="in" ? +t.amount : -t.amount;
+    runMap[t.id] = run;
+  });
+
+  rows.reverse(); /* newest first for display */
+
+  var html = "", groups = [], cur = null;
+  rows.forEach(function(t){
+    var d = new Date(t.ts), k = dayKey(d);
+    if(!cur || cur.k !== k){ cur = {k:k, d:d, items:[]}; groups.push(cur); }
+    cur.items.push(t);
+  });
+
+  groups.forEach(function(g){
+    var net = 0;
+    g.items.forEach(function(t){ net += t.type==="in" ? +t.amount : -t.amount; });
+    html += '<div class="daygroup"><div class="dayhead">' +
+      '<span class="daydate">' + esc(dayLabel(g.d)) + '</span>' +
+      '<span class="daynet num">' + (net>=0?"+":"") + money(net) + '</span></div>';
+
+    g.items.forEach(function(t){
+      var d = new Date(t.ts);
+      var sign = t.type==="in" ? "+" : "\u2212";
+      var meta = '<span class="tag">' + (t.account==="bank" ? "Bank" : "Cash") + '</span>' +
+                 esc(timeLabel(d)) + (t.detail ? " \u00B7 " + esc(t.detail) : "");
+      html += '<button class="row" data-id="' + t.id + '">' +
+        '<span class="r-head">' + esc(t.head || "Uncategorised") + '</span>' +
+        '<span class="r-amt num ' + t.type + '">' + sign + money(t.amount) + '</span>' +
+        '<span class="r-meta">' + meta + '</span>' +
+        '<span class="r-bal num">' + money(runMap[t.id]) + '</span>' +
+      '</button>';
+    });
+    html += '</div>';
+  });
+
+  list.innerHTML = html;
+}
+
+/* ---------------- toast ---------------- */
+var toastTimer;
+function toast(msg){
+  var t = el("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2200);
+}
+
+/* ---------------- sheets ---------------- */
+var openSheet = null;
+function show(id){
+  openSheet = id;
+  el("scrim").classList.add("open");
+  el(id).classList.add("open");
+}
+function hide(){
+  if(openSheet) el(openSheet).classList.remove("open");
+  el("scrim").classList.remove("open");
+  openSheet = null;
+}
+el("scrim").addEventListener("click", hide);
+
+/* ---------------- entry form ---------------- */
+var editingId = null, curType = "in", curAccount = "cash";
+
+function setAccount(a){
+  curAccount = a;
+  el("segCash").setAttribute("aria-pressed", a==="cash" ? "true" : "false");
+  el("segBank").setAttribute("aria-pressed", a==="bank" ? "true" : "false");
+}
+el("segCash").addEventListener("click", function(){ setAccount("cash"); });
+el("segBank").addEventListener("click", function(){ setAccount("bank"); });
+
+function usedHeads(){
+  var seen = {}, out = [];
+  sorted().reverse().forEach(function(t){
+    if(t.head && !seen[t.head.toLowerCase()]){ seen[t.head.toLowerCase()] = 1; out.push(t.head); }
+  });
+  return out;
+}
+function fillHeads(){
+  var heads = usedHeads();
+  el("headList").innerHTML = heads.map(function(h){ return '<option value="'+esc(h)+'">'; }).join("");
+  el("headChips").innerHTML = heads.slice(0,6).map(function(h){
+    return '<button type="button" class="chip">'+esc(h)+'</button>';
+  }).join("");
+}
+el("headChips").addEventListener("click", function(e){
+  var c = e.target.closest(".chip");
+  if(c){ el("fHead").value = c.textContent; }
+});
+
+function openEntry(type, txn){
+  curType = type;
+  editingId = txn ? txn.id : null;
+
+  var title = el("sheetTitle");
+  title.textContent = (editingId ? "Edit " : "") + (type==="in" ? "cash in" : "cash out");
+  title.className = "sheet-title " + type;
+  title.style.textTransform = "uppercase";
+
+  el("fAmount").className = "f-in amount-in num " + type;
+  el("btnSave").className = "btn btn-save " + type;
+  el("btnSave").textContent = editingId ? "Update" : "Save";
+  el("fErr").textContent = "";
+
+  el("fDate").value  = toLocalInput(txn ? new Date(txn.ts) : new Date());
+  el("fAmount").value = txn ? txn.amount : "";
+  el("fHead").value   = txn ? (txn.head || "") : "";
+  el("fDetail").value = txn ? (txn.detail || "") : "";
+  setAccount(txn ? txn.account : "cash");
+
+  var foot = el("sheet").querySelector(".sheet-foot");
+  var del = el("btnDelete");
+  if(editingId){
+    if(!del){
+      del = document.createElement("button");
+      del.id = "btnDelete"; del.className = "btn btn-danger"; del.textContent = "Delete";
+      del.addEventListener("click", doDelete);
+      foot.insertBefore(del, foot.firstChild);
+    }
+    del.style.display = "";
+    el("btnCancel").style.display = "none";
+    foot.style.gridTemplateColumns = "auto 1fr";
+  } else {
+    if(del) del.style.display = "none";
+    el("btnCancel").style.display = "";
+    foot.style.gridTemplateColumns = "auto 1fr";
+  }
+
+  fillHeads();
+  show("sheet");
+  setTimeout(function(){ el("fAmount").focus(); }, 260);
+}
+
+el("btnIn").addEventListener("click",  function(){ openEntry("in"); });
+el("btnOut").addEventListener("click", function(){ openEntry("out"); });
+el("btnCancel").addEventListener("click", hide);
+
+el("list").addEventListener("click", function(e){
+  var row = e.target.closest(".row");
+  if(!row) return;
+  var t = state.txns.filter(function(x){ return x.id === row.dataset.id; })[0];
+  if(t) openEntry(t.type, t);
+});
+
+el("btnSave").addEventListener("click", function(){
+  var amt = parseAmt(el("fAmount").value);
+  if(!isFinite(amt) || amt <= 0){
+    el("fErr").textContent = "Enter an amount greater than zero.";
+    el("fAmount").focus();
+    return;
+  }
+  var rec = {
+    id: editingId || uid(),
+    ts: fromLocalInput(el("fDate").value).toISOString(),
+    type: curType,
+    amount: Math.round(amt * 100) / 100,
+    head: el("fHead").value.trim(),
+    detail: el("fDetail").value.trim(),
+    account: curAccount
+  };
+  if(editingId){
+    state.txns = state.txns.map(function(t){ return t.id === editingId ? rec : t; });
+  } else {
+    state.txns.push(rec);
+  }
+  persist(); render(); hide();
+  toast(editingId ? "Entry updated" : (curType==="in" ? "Cash in recorded" : "Cash out recorded"));
+});
+
+function doDelete(){
+  if(!editingId) return;
+  if(!confirm("Delete this entry? This cannot be undone.")) return;
+  state.txns = state.txns.filter(function(t){ return t.id !== editingId; });
+  persist(); render(); hide();
+  toast("Entry deleted");
+}
+
+/* ---------------- settings ---------------- */
+el("btnSettings").addEventListener("click", function(){
+  el("sCash").value = state.openingCash || 0;
+  el("sBank").value = state.openingBank || 0;
+  if(!persistent){
+    var w = el("storeWarn");
+    w.style.display = "";
+    w.textContent = "This browser is blocking saved data, so entries will disappear when you close the app. Install it to your home screen, or export often.";
+  }
+  show("setSheet");
+});
+el("btnSetDone").addEventListener("click", function(){
+  var c = parseAmt(el("sCash").value), b = parseAmt(el("sBank").value);
+  state.openingCash = isFinite(c) ? c : 0;
+  state.openingBank = isFinite(b) ? b : 0;
+  persist(); render(); hide();
+  toast("Opening balances saved");
+});
+
+el("btnExport").addEventListener("click", function(){
+  var rows = sorted();
+  if(!rows.length){ toast("Nothing to export yet"); return; }
+  var run = (+state.openingCash||0) + (+state.openingBank||0);
+  var out = ["Date,Time,Type,Head,Details,Account,Cash In,Cash Out,Running Balance"];
+  function q(s){ return '"' + String(s==null?"":s).replace(/"/g,'""') + '"'; }
+  rows.forEach(function(t){
+    var d = new Date(t.ts);
+    run += t.type==="in" ? +t.amount : -t.amount;
+    out.push([
+      q(d.getDate()+"-"+MONS[d.getMonth()]+"-"+d.getFullYear()),
+      q(timeLabel(d)),
+      q(t.type==="in" ? "Cash In" : "Cash Out"),
+      q(t.head), q(t.detail),
+      q(t.account==="bank" ? "Bank" : "Cash"),
+      t.type==="in" ? t.amount : "",
+      t.type==="out" ? t.amount : "",
+      run
+    ].join(","));
+  });
+  var blob = new Blob(["\uFEFF" + out.join("\r\n")], {type:"text/csv;charset=utf-8;"});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "cashbook-" + dayKey(new Date()) + ".csv";
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast("Exported");
+});
+
+el("btnWipe").addEventListener("click", function(){
+  if(!confirm("Erase every entry and reset opening balances? This cannot be undone.")) return;
+  state = { openingCash:0, openingBank:0, txns:[] };
+  persist(); render(); hide();
+  toast("All entries erased");
+});
+
+/* ---------------- keyboard ---------------- */
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape" && openSheet) hide();
+});
+
+/* ---------------- offline support ---------------- */
+if("serviceWorker" in navigator && location.protocol.indexOf("http") === 0){
+  navigator.serviceWorker.register("sw.js").catch(function(){});
+}
+
+render();
+</script>
+</body>
+</html>
