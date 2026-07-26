@@ -3,365 +3,531 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<meta name="theme-color" content="#0F1A15">
+<meta name="theme-color" content="#0B1016">
 <title>Cashbook</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{
-  --paper:#FAFAF7;
-  --ink:#16211C;
-  --ink-soft:#5D6B64;
-  --ink-faint:#93A099;
-  --rule:#E2E6E0;
-  --rule-strong:#C6CDC5;
-  --in:#12724A;
-  --in-bg:#E8F3ED;
-  --out:#AF2A1E;
-  --out-bg:#F8EAE8;
-  --field:#FFFFFF;
-  --panel:#F1F3EF;
-  --sheet-shadow:0 -8px 40px rgba(22,33,28,.22);
-  --mono:ui-monospace,"Roboto Mono","DroidSansMono","SF Mono",Menlo,Consolas,monospace;
+  --bg:#0B1016;
+  --text:#EDF2F4;
+  --dim:#93A3AE;
+  --faint:#66757F;
+  --glass:rgba(255,255,255,.055);
+  --glass2:rgba(255,255,255,.085);
+  --stroke:rgba(255,255,255,.11);
+  --stroke2:rgba(255,255,255,.18);
+  --accent:#8B7BFF;
+  --accent-dim:rgba(139,123,255,.16);
+  --in:#31D68C;
+  --in-dim:rgba(49,214,140,.14);
+  --out:#FF6F6B;
+  --out-dim:rgba(255,111,107,.14);
+  --blue:#4FC3F7;
+  --blue-dim:rgba(79,195,247,.14);
+  --mono:ui-monospace,"Roboto Mono","DroidSansMono","SF Mono",Menlo,monospace;
   --sans:system-ui,-apple-system,"Roboto","Segoe UI",sans-serif;
-  --safe-b:env(safe-area-inset-bottom,0px);
-  --safe-t:env(safe-area-inset-top,0px);
+  --sb:env(safe-area-inset-bottom,0px);
+  --st:env(safe-area-inset-top,0px);
+  --r:16px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%}
 body{
-  background:var(--paper);color:var(--ink);font-family:var(--sans);
-  font-size:16px;line-height:1.45;overscroll-behavior-y:none;
+  font-family:var(--sans);font-size:16px;line-height:1.45;color:var(--text);
+  background:
+    radial-gradient(900px 560px at 12% -8%, rgba(139,123,255,.26), transparent 62%),
+    radial-gradient(760px 480px at 104% 2%, rgba(79,195,247,.15), transparent 58%),
+    radial-gradient(680px 460px at 50% 108%, rgba(49,214,140,.12), transparent 62%),
+    var(--bg);
+  background-attachment:fixed;
+  overscroll-behavior-y:none;
 }
-button,input,select,textarea{font:inherit;color:inherit}
-.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+button,input,select{font:inherit;color:inherit}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .neg{color:var(--out)}
+svg{display:block}
 
-/* ---------- shell ---------- */
+.glass{
+  background:var(--glass);
+  border:1px solid var(--stroke);
+  border-radius:var(--r);
+  -webkit-backdrop-filter:blur(20px) saturate(150%);
+  backdrop-filter:blur(20px) saturate(150%);
+}
+
 .view{display:none;flex-direction:column;height:100%}
 .view.active{display:flex}
-#scroll,#repScroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-#scroll{padding-bottom:8px}
+#scroll,#repScroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 20px}
 
-/* ---------- header ---------- */
-header{
-  padding:calc(14px + var(--safe-t)) 18px 0;background:var(--paper);
-  position:sticky;top:0;z-index:5;
+/* ================= home header ================= */
+.hdr{padding:calc(12px + var(--st)) 16px 6px}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.wordmark{font-size:12px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.hdr-btns{display:flex;gap:8px}
+.ibtn{
+  display:flex;align-items:center;gap:7px;cursor:pointer;
+  background:var(--glass);border:1px solid var(--stroke);border-radius:11px;
+  padding:8px 12px;font-size:12px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--text);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
 }
-.bar{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px}
-.brand{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
-.barbtns{display:flex;gap:16px}
-.tbtn{
-  background:none;border:0;padding:6px 0;margin:-6px 0;
-  color:var(--ink-soft);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-  font-weight:700;cursor:pointer;
+.ibtn:active{background:var(--glass2)}
+.ibtn.sq{padding:8px 9px}
+.ibtn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round}
+
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.acct-card{padding:13px 14px 14px}
+.c-top{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.dot.g{background:var(--in);box-shadow:0 0 12px var(--in)}
+.dot.b{background:var(--blue);box-shadow:0 0 12px var(--blue)}
+.c-label{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.c-val{font-size:20px;font-weight:600;display:block;line-height:1.15}
+
+.total-card{
+  padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:linear-gradient(115deg, rgba(139,123,255,.20), rgba(139,123,255,.05));
+  border-color:rgba(139,123,255,.30);
 }
-.tbtn:active{color:var(--ink)}
-.tbtn.strong{color:var(--ink)}
+.t-val{font-size:29px;font-weight:700;letter-spacing:-.03em}
 
-.ledger{border-top:1px solid var(--rule-strong);margin-bottom:10px}
-.acct{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
-  padding:11px 0;border-bottom:1px solid var(--rule)}
-.acct-name{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
-.acct-val{font-size:20px;font-weight:500}
-.acct.total{border-bottom:2px solid var(--ink);padding-top:13px}
-.acct.total .acct-name{color:var(--ink);font-weight:700}
-.acct.total .acct-val{font-size:27px;font-weight:600;letter-spacing:-.02em}
-
-/* ---------- entry list ---------- */
-.daygroup{margin-top:22px}
-.dayhead{display:flex;align-items:baseline;justify-content:space-between;padding:0 18px 7px}
-.daydate{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-.daynet{font-size:12px;color:var(--ink-soft)}
+/* ================= entries ================= */
+.sec-head{
+  font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--faint);padding:22px 2px 10px;
+}
+.daygroup{margin-bottom:14px}
+.dayhead{display:flex;align-items:baseline;justify-content:space-between;padding:0 4px 7px}
+.daydate{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.daynet{font-size:11.5px;color:var(--faint)}
+.rows{overflow:hidden}
 .row{
-  display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:baseline;
-  width:100%;text-align:left;background:none;border:0;
-  padding:10px 18px;border-top:1px solid var(--rule);cursor:pointer;
+  display:grid;grid-template-columns:34px 1fr auto;gap:2px 11px;align-items:center;
+  width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--stroke);
+  padding:12px 14px;cursor:pointer;color:inherit;
 }
-.row:active{background:#F0F2EE}
-.row:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
-.r-head{font-size:15px;font-weight:600;line-height:1.25}
-.r-amt{font-size:15px;font-weight:600;white-space:nowrap}
+.rows .row:last-child{border-bottom:0}
+.row:active{background:var(--glass2)}
+.row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.r-ico{
+  grid-row:1/3;width:34px;height:34px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:700;line-height:1;
+}
+.r-ico.in{background:var(--in-dim);color:var(--in)}
+.r-ico.out{background:var(--out-dim);color:var(--out)}
+.r-head{font-size:14.5px;font-weight:600;line-height:1.25}
+.r-amt{font-size:14.5px;font-weight:700;white-space:nowrap}
 .r-amt.in{color:var(--in)}
 .r-amt.out{color:var(--out)}
-.r-meta{font-size:12.5px;color:var(--ink-soft);line-height:1.3;
-  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.r-bal{font-size:12px;color:var(--ink-faint);white-space:nowrap}
-.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--ink-soft);
-  border:1px solid var(--rule-strong);border-radius:3px;padding:0 4px;margin-right:6px;
-  position:relative;top:-1px}
-
-.empty{padding:56px 30px;text-align:center;color:var(--ink-soft)}
-.empty h2{font-size:17px;color:var(--ink);margin:0 0 6px;font-weight:600}
-.empty p{margin:0;font-size:14px;line-height:1.5}
-
-/* ---------- bottom actions ---------- */
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;
-  padding:10px 14px calc(10px + var(--safe-b));background:var(--paper);box-shadow:0 -1px 0 var(--rule)}
-.act{border:1px solid;border-radius:11px;padding:15px 8px;
-  font-size:14px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;cursor:pointer}
-.act:active{transform:translateY(1px)}
-.act.out{background:var(--out-bg);border-color:var(--out);color:var(--out)}
-.act.in{background:var(--in-bg);border-color:var(--in);color:var(--in)}
-
-/* ---------- reports ---------- */
-.topbar{
-  display:flex;align-items:center;gap:12px;
-  padding:calc(12px + var(--safe-t)) 16px 12px;
-  border-bottom:1px solid var(--rule);background:var(--paper);
+.r-meta{font-size:12px;color:var(--faint);line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-bal{font-size:11px;color:var(--faint);white-space:nowrap}
+.pill-tag{
+  display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.07em;
+  text-transform:uppercase;padding:1px 6px;border-radius:5px;margin-right:6px;
 }
-.back{background:none;border:0;font-size:22px;line-height:1;padding:4px 8px 4px 0;cursor:pointer;color:var(--ink)}
-.topttl{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:0;flex:1}
+.pill-tag.cash{background:var(--in-dim);color:var(--in)}
+.pill-tag.bank{background:var(--blue-dim);color:var(--blue)}
 
-.filters{background:var(--panel);border-bottom:1px solid var(--rule);padding:14px 16px 6px}
-.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.fgrid.one{grid-template-columns:1fr}
-.fld{margin-bottom:12px}
-.fld-l{display:block;font-size:10.5px;font-weight:700;letter-spacing:.11em;
-  text-transform:uppercase;color:var(--ink-soft);margin-bottom:5px}
+.empty{padding:52px 26px;text-align:center;color:var(--dim)}
+.empty h2{font-size:16px;color:var(--text);margin:0 0 7px;font-weight:600}
+.empty p{margin:0;font-size:13.5px;line-height:1.55}
+
+/* ================= bottom actions ================= */
+.actions{
+  display:grid;grid-template-columns:1fr 1fr;gap:11px;
+  padding:12px 16px calc(12px + var(--sb));
+  background:linear-gradient(to top, var(--bg) 55%, transparent);
+}
+.act{
+  display:grid;grid-template-columns:34px 1fr;grid-template-rows:auto auto;
+  gap:0 11px;align-items:center;text-align:left;
+  border-radius:15px;padding:12px 14px;cursor:pointer;border:1px solid;
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+}
+.act:active{transform:scale(.985)}
+.act-ico{
+  grid-row:1/3;width:34px;height:34px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700;line-height:1;
+}
+.act-main{font-size:14.5px;font-weight:800;letter-spacing:.02em}
+.act-sub{font-size:11px;font-weight:500;opacity:.72;line-height:1.2}
+.act.out{background:var(--out-dim);border-color:rgba(255,111,107,.42);color:var(--out)}
+.act.out .act-ico{background:rgba(255,111,107,.20)}
+.act.in{background:var(--in-dim);border-color:rgba(49,214,140,.42);color:var(--in)}
+.act.in .act-ico{background:rgba(49,214,140,.20)}
+
+/* ================= topbar ================= */
+.topbar{
+  display:flex;align-items:center;gap:10px;
+  padding:calc(12px + var(--st)) 16px 12px;
+}
+.back{background:none;border:0;padding:6px 8px 6px 0;cursor:pointer;color:var(--text)}
+.back svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.topttl{font-size:13px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin:0;flex:1}
+.txt-btn{background:none;border:0;color:var(--accent);font-size:12px;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;cursor:pointer;padding:6px 0}
+
+/* ================= filter card ================= */
+.filt-card{width:100%;text-align:left;padding:14px 15px;cursor:pointer;color:inherit;display:block}
+.fc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.fc-title{font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.chev{color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.fc-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px 12px}
+.fc-cell{min-width:0}
+.fc-l{display:block;font-size:10px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:3px}
+.fc-v{display:block;font-size:14px;font-weight:600;color:var(--accent);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.filt-panel{display:none;margin-top:10px;padding:15px 15px 3px}
+.filt-panel.open{display:block}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.fld{margin-bottom:14px}
+.fld.wide{grid-column:1/-1}
+.fld-l{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:6px}
 .ctl{
-  width:100%;background:var(--field);border:1px solid var(--rule-strong);
-  border-radius:8px;padding:10px 11px;font-size:15px;
+  width:100%;background:rgba(255,255,255,.06);color:var(--text);
+  border:1px solid var(--stroke);border-radius:11px;padding:11px 12px;font-size:15px;
   -webkit-appearance:none;appearance:none;
 }
 select.ctl{
-  background-image:linear-gradient(45deg,transparent 50%,var(--ink-soft) 50%),
-                   linear-gradient(135deg,var(--ink-soft) 50%,transparent 50%);
+  background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),
+                   linear-gradient(135deg,var(--dim) 50%,transparent 50%);
   background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;
   background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:32px;
 }
-.ctl:focus{outline:2px solid var(--ink);outline-offset:-1px}
+.ctl:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+option{background:#141A22;color:var(--text)}
+input[type=date].ctl,input[type=datetime-local].ctl{min-height:44px}
 
-.pills{display:flex;gap:7px;overflow-x:auto;padding:2px 16px 14px;
-  background:var(--panel);border-bottom:1px solid var(--rule);
-  scrollbar-width:none;-ms-overflow-style:none}
-.pills::-webkit-scrollbar{display:none}
-.pill{
-  flex:0 0 auto;background:var(--field);border:1px solid var(--rule-strong);
-  border-radius:20px;padding:8px 14px;font-size:13px;font-weight:600;
-  color:var(--ink-soft);cursor:pointer;white-space:nowrap;
+/* ================= report type cards ================= */
+.rtypes{display:grid;gap:9px}
+.rtype{
+  display:grid;grid-template-columns:22px 1fr;gap:2px 12px;align-items:center;
+  text-align:left;padding:14px 15px;cursor:pointer;color:inherit;
+  background:var(--glass);border:1px solid var(--stroke);border-radius:14px;
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
 }
-.pill[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.rtype[aria-pressed="true"]{
+  background:var(--accent-dim);border-color:rgba(139,123,255,.48);
+}
+.radio{
+  grid-row:1/3;width:20px;height:20px;border-radius:50%;
+  border:2px solid var(--faint);position:relative;
+}
+.rtype[aria-pressed="true"] .radio{border-color:var(--accent)}
+.rtype[aria-pressed="true"] .radio::after{
+  content:"";position:absolute;inset:3px;border-radius:50%;background:var(--accent);
+}
+.rt-t{font-size:14.5px;font-weight:700}
+.rt-d{font-size:11.5px;color:var(--faint);line-height:1.3}
 
-.totals{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--rule)}
-.tot{padding:12px 8px;text-align:center;border-right:1px solid var(--rule)}
-.tot:last-child{border-right:0}
-.tot-l{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--ink-soft);margin-bottom:3px}
-.tot-v{font-size:16px;font-weight:700}
+/* ================= totals ================= */
+.tot-cards{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.tot-card{padding:12px 14px}
+.tot-card.net{grid-column:1/-1;
+  background:linear-gradient(115deg, rgba(139,123,255,.18), rgba(139,123,255,.04));
+  border-color:rgba(139,123,255,.28)}
+.tot-l{display:block;font-size:10px;font-weight:800;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+.tot-v{font-size:19px;font-weight:700}
 .tot-v.in{color:var(--in)}
 .tot-v.out{color:var(--out)}
+.tot-card.net .tot-v{font-size:23px}
 
-table.rep{width:100%;border-collapse:collapse;font-size:14px}
+/* ================= result table ================= */
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px}
+table.rep{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+table.rep.wide{min-width:660px}
 table.rep th{
-  font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
-  color:var(--ink-soft);text-align:right;padding:10px 8px;
-  border-bottom:1px solid var(--rule-strong);background:var(--paper);
-  position:sticky;top:0;z-index:2;
+  font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dim);text-align:right;padding:11px 10px;white-space:nowrap;
+  background:rgba(255,255,255,.07);
+  border-bottom:1px solid var(--stroke2);border-right:1px solid var(--stroke);
 }
-table.rep th.l{text-align:left;padding-left:16px}
-table.rep td{padding:10px 8px;border-bottom:1px solid var(--rule);text-align:right;vertical-align:top}
-table.rep td.l{text-align:left;padding-left:16px}
-table.rep td:last-child{padding-right:16px}
-table.rep th:last-child{padding-right:16px}
-.cellhead{font-weight:600;line-height:1.25}
-.cellsub{font-size:12px;color:var(--ink-soft);line-height:1.3;margin-top:2px}
-.cin{color:var(--in);font-weight:600}
-.cout{color:var(--out);font-weight:600}
-tr.grand td{border-top:2px solid var(--ink);border-bottom:0;font-weight:700;padding-top:12px;padding-bottom:24px}
+table.rep th:first-child{border-radius:12px 0 0 0}
+table.rep th:last-child{border-radius:0 12px 0 0;border-right:0}
+table.rep th.l{text-align:left}
+table.rep td{
+  padding:11px 10px;text-align:right;vertical-align:middle;white-space:nowrap;
+  border-bottom:1px solid var(--stroke);border-right:1px solid var(--stroke);
+}
+table.rep td:last-child{border-right:0}
+table.rep td.l{text-align:left;white-space:normal}
+table.rep tbody tr:nth-child(even) td{background:rgba(255,255,255,.028)}
+.cellhead{font-weight:600}
+.cellsub{font-size:11px;color:var(--faint);margin-top:2px}
+.cin{color:var(--in);font-weight:700}
+.cout{color:var(--out);font-weight:700}
+tr.grand td{
+  border-top:1.5px solid var(--stroke2);font-weight:800;
+  background:rgba(139,123,255,.12) !important;border-bottom:0;
+}
+tr.grand td:first-child{border-radius:0 0 0 12px}
+tr.grand td:last-child{border-radius:0 0 12px 0}
 
-.repfoot{display:grid;grid-template-columns:1fr 1fr;gap:10px;
-  padding:10px 14px calc(10px + var(--safe-b));background:var(--paper);box-shadow:0 -1px 0 var(--rule)}
+.repfoot{
+  display:grid;grid-template-columns:1fr 1fr;gap:11px;
+  padding:12px 16px calc(12px + var(--sb));
+  background:linear-gradient(to top, var(--bg) 55%, transparent);
+}
 
-/* ---------- sheets ---------- */
-.scrim{position:fixed;inset:0;background:rgba(22,33,28,.42);
+/* ================= sheets ================= */
+.scrim{position:fixed;inset:0;background:rgba(4,8,12,.62);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
   opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
 .scrim.open{opacity:1;pointer-events:auto}
 .sheet{
   position:fixed;left:0;right:0;bottom:0;z-index:21;
-  background:var(--paper);border-radius:16px 16px 0 0;box-shadow:var(--sheet-shadow);
-  transform:translateY(101%);transition:transform .24s cubic-bezier(.2,.8,.3,1);
+  background:rgba(19,25,33,.86);
+  -webkit-backdrop-filter:blur(28px) saturate(160%);backdrop-filter:blur(28px) saturate(160%);
+  border-top:1px solid var(--stroke2);border-radius:22px 22px 0 0;
+  transform:translateY(101%);transition:transform .26s cubic-bezier(.2,.85,.3,1);
   max-height:94dvh;display:flex;flex-direction:column;
 }
 .sheet.open{transform:translateY(0)}
-.sheet-top{padding:14px 18px 10px;border-bottom:1px solid var(--rule)}
-.grab{width:34px;height:4px;border-radius:2px;background:var(--rule-strong);margin:0 auto 12px}
-.sheet-title{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:0}
+.sheet-top{padding:12px 18px 12px;border-bottom:1px solid var(--stroke)}
+.grab{width:36px;height:4px;border-radius:2px;background:var(--stroke2);margin:0 auto 12px}
+.sheet-title{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin:0}
 .sheet-title.in{color:var(--in)}
 .sheet-title.out{color:var(--out)}
-.sheet-body{padding:16px 18px 6px;overflow-y:auto}
-.sheet-foot{padding:12px 18px calc(14px + var(--safe-b));border-top:1px solid var(--rule);
+.sheet-body{padding:18px 18px 6px;overflow-y:auto}
+.sheet-foot{padding:12px 18px calc(14px + var(--sb));border-top:1px solid var(--stroke);
   display:grid;grid-template-columns:auto 1fr;gap:10px}
 
-label.f{display:block;margin-bottom:16px}
-.f-label{display:block;font-size:11px;font-weight:700;letter-spacing:.11em;
-  text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
-.f-in{width:100%;background:var(--field);border:1px solid var(--rule-strong);
-  border-radius:9px;padding:12px 13px;font-size:16px}
-.f-in:focus{outline:2px solid var(--ink);outline-offset:-1px;border-color:var(--ink)}
+label.f{display:block;margin-bottom:17px}
+.f-label{display:block;font-size:10px;font-weight:800;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+.f-in{width:100%;background:rgba(255,255,255,.06);color:var(--text);
+  border:1px solid var(--stroke);border-radius:12px;padding:13px 14px;font-size:16px;
+  -webkit-appearance:none;appearance:none}
+.f-in:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),
+  linear-gradient(135deg,var(--dim) 50%,transparent 50%);
+  background-position:calc(100% - 19px) 50%,calc(100% - 14px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px}
 .amount-in{font-family:var(--mono);font-variant-numeric:tabular-nums;
-  font-size:29px;font-weight:600;padding:10px 13px}
+  font-size:30px;font-weight:700;padding:11px 14px;letter-spacing:-.02em}
 .amount-in.in{color:var(--in)}
 .amount-in.out{color:var(--out)}
 
-.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.seg button{background:var(--field);border:1px solid var(--rule-strong);border-radius:9px;
-  padding:13px 6px;font-size:13px;font-weight:700;letter-spacing:.07em;
-  text-transform:uppercase;color:var(--ink-soft);cursor:pointer}
-.seg button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.seg button{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:rgba(255,255,255,.05);border:1px solid var(--stroke);border-radius:12px;
+  padding:14px 6px;font-size:13px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--dim);cursor:pointer}
+#segCash[aria-pressed="true"]{background:var(--in-dim);border-color:rgba(49,214,140,.5);color:var(--in)}
+#segBank[aria-pressed="true"]{background:var(--blue-dim);border-color:rgba(79,195,247,.5);color:var(--blue)}
 
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.chip{background:none;border:1px solid var(--rule-strong);border-radius:20px;
-  padding:5px 11px;font-size:13px;color:var(--ink-soft);cursor:pointer}
-.chip:active{border-color:var(--ink);color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.chip{background:rgba(255,255,255,.05);border:1px solid var(--stroke);border-radius:20px;
+  padding:6px 12px;font-size:13px;color:var(--dim);cursor:pointer}
+.chip:active{border-color:var(--accent);color:var(--accent)}
 
-.btn{border-radius:10px;padding:15px 18px;font-size:14px;font-weight:700;
-  letter-spacing:.09em;text-transform:uppercase;cursor:pointer;border:1px solid}
-.btn-ghost{background:none;border-color:var(--rule-strong);color:var(--ink-soft)}
-.btn-danger{background:none;border-color:var(--out);color:var(--out)}
-.btn-save{background:var(--ink);border-color:var(--ink);color:var(--paper)}
-.btn-save.in{background:var(--in);border-color:var(--in)}
-.btn-save.out{background:var(--out);border-color:var(--out)}
+.btn{
+  border-radius:13px;padding:15px 18px;font-size:13.5px;font-weight:800;
+  letter-spacing:.09em;text-transform:uppercase;cursor:pointer;border:1px solid;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.btn-ghost{background:var(--glass);border-color:var(--stroke2);color:var(--text)}
+.btn-danger{background:var(--out-dim);border-color:rgba(255,111,107,.42);color:var(--out)}
+.btn-accent{background:var(--accent);border-color:var(--accent);color:#0B1016}
+.btn-save{background:var(--accent);border-color:var(--accent);color:#0B1016}
+.btn-save.in{background:var(--in);border-color:var(--in);color:#06130C}
+.btn-save.out{background:var(--out);border-color:var(--out);color:#1B0605}
+.btn:disabled{opacity:.4}
+.btn.full{width:100%;margin-bottom:11px}
 
-.err{color:var(--out);font-size:13px;margin:-8px 0 14px}
-.note{font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin:2px 0 18px}
+.err{color:var(--out);font-size:13px;margin:-9px 0 15px}
+.note{font-size:12.5px;color:var(--dim);line-height:1.55;margin:2px 0 18px}
 .setrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
-.toast{position:fixed;left:50%;bottom:calc(96px + var(--safe-b));transform:translate(-50%,10px);
-  background:var(--ink);color:var(--paper);font-size:13.5px;font-weight:500;
-  padding:10px 16px;border-radius:8px;opacity:0;pointer-events:none;
-  transition:opacity .2s,transform .2s;z-index:40;max-width:88vw;text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(100px + var(--sb));transform:translate(-50%,10px);
+  background:rgba(24,31,40,.95);border:1px solid var(--stroke2);color:var(--text);
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  font-size:13.5px;font-weight:500;padding:11px 17px;border-radius:11px;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+  z-index:40;max-width:88vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
-@media (prefers-reduced-motion:reduce){
-  *{transition-duration:.01ms !important;animation-duration:.01ms !important}
-}
-
-/* ---------- print / save as PDF ---------- */
-#printTitle{display:none}
-@media print{
-  @page{margin:14mm}
-  body{background:#fff;font-size:11pt}
-  .topbar,.filters,.pills,.repfoot,.actions,.sheet,.scrim,.toast,header,#homeView{display:none !important}
-  #repScroll{overflow:visible;height:auto}
-  #reportsView{display:block !important;height:auto}
-  #printTitle{display:block;margin-bottom:14px}
-  #printTitle h1{font-size:15pt;margin:0 0 4px}
-  #printTitle p{font-size:9.5pt;color:#444;margin:0}
-  .totals{border:1px solid #999;margin-bottom:12px}
-  table.rep th{position:static;background:#fff}
-  table.rep td,table.rep th{border-color:#bbb !important}
-  tr{break-inside:avoid}
-}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important}}
 </style>
 </head>
 <body>
 
-<!-- ============ HOME ============ -->
+<!-- ==================== HOME ==================== -->
 <div class="view active" id="homeView">
-  <header>
-    <div class="bar">
-      <span class="brand">Cashbook</span>
-      <span class="barbtns">
-        <button class="tbtn strong" id="btnReports">Reports</button>
-        <button class="tbtn" id="btnSettings">Settings</button>
+  <div class="hdr">
+    <div class="hdr-top">
+      <span class="wordmark">Cashbook</span>
+      <span class="hdr-btns">
+        <button class="ibtn" id="btnReports">
+          <svg viewBox="0 0 24 24"><path d="M3 20h18M7 16V9M12 16V4M17 16v-5"/></svg>Reports
+        </button>
+        <button class="ibtn sq" id="btnSettings" aria-label="Settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+        </button>
       </span>
     </div>
-    <div class="ledger">
-      <div class="acct"><span class="acct-name">Cash in hand</span><span class="acct-val num" id="balCash">0</span></div>
-      <div class="acct"><span class="acct-name">Cash in bank</span><span class="acct-val num" id="balBank">0</span></div>
-      <div class="acct total"><span class="acct-name">Total</span><span class="acct-val num" id="balTotal">0</span></div>
+    <div class="cards">
+      <div class="glass acct-card">
+        <span class="c-top"><span class="dot g"></span><span class="c-label">Cash in hand</span></span>
+        <span class="c-val num" id="balCash">0</span>
+      </div>
+      <div class="glass acct-card">
+        <span class="c-top"><span class="dot b"></span><span class="c-label">Cash in bank</span></span>
+        <span class="c-val num" id="balBank">0</span>
+      </div>
     </div>
-  </header>
-  <div id="scroll"><div id="list"></div></div>
+    <div class="glass total-card">
+      <span class="c-label">Total balance</span>
+      <span class="t-val num" id="balTotal">0</span>
+    </div>
+  </div>
+
+  <div id="scroll">
+    <div class="sec-head">Recent entries</div>
+    <div id="list"></div>
+  </div>
+
   <div class="actions">
-    <button class="act out" id="btnOut">Cash out</button>
-    <button class="act in" id="btnIn">Cash in</button>
+    <button class="act out" id="btnOut">
+      <span class="act-ico">&minus;</span>
+      <span class="act-main">Cash Out</span>
+      <span class="act-sub">money paid</span>
+    </button>
+    <button class="act in" id="btnIn">
+      <span class="act-ico">+</span>
+      <span class="act-main">Cash In</span>
+      <span class="act-sub">money received</span>
+    </button>
   </div>
 </div>
 
-<!-- ============ REPORTS ============ -->
+<!-- ==================== REPORTS ==================== -->
 <div class="view" id="reportsView">
   <div class="topbar">
-    <button class="back" id="btnBack" aria-label="Back">&#8592;</button>
+    <button class="back" id="btnBack" aria-label="Back">
+      <svg viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+    </button>
     <h1 class="topttl">Reports</h1>
-    <button class="tbtn" id="btnReset">Reset</button>
-  </div>
-
-  <div class="filters">
-    <div class="fgrid">
-      <div class="fld">
-        <span class="fld-l">Period</span>
-        <select class="ctl" id="fPreset">
-          <option value="all">All time</option>
-          <option value="today">Today</option>
-          <option value="week">Last 7 days</option>
-          <option value="month">This month</option>
-          <option value="lastmonth">Last month</option>
-          <option value="year">This year</option>
-          <option value="custom">Custom</option>
-        </select>
-      </div>
-      <div class="fld">
-        <span class="fld-l">Entry type</span>
-        <select class="ctl" id="fType">
-          <option value="all">All entries</option>
-          <option value="in">Cash in only</option>
-          <option value="out">Cash out only</option>
-        </select>
-      </div>
-      <div class="fld">
-        <span class="fld-l">From date</span>
-        <input class="ctl" type="date" id="fFrom">
-      </div>
-      <div class="fld">
-        <span class="fld-l">To date</span>
-        <input class="ctl" type="date" id="fTo">
-      </div>
-      <div class="fld">
-        <span class="fld-l">Head</span>
-        <select class="ctl" id="fHeadSel"><option value="all">All heads</option></select>
-      </div>
-      <div class="fld">
-        <span class="fld-l">Payment mode</span>
-        <select class="ctl" id="fMode">
-          <option value="all">Cash &amp; bank</option>
-          <option value="cash">Cash only</option>
-          <option value="bank">Bank only</option>
-        </select>
-      </div>
-    </div>
-    <div class="fgrid one">
-      <div class="fld">
-        <span class="fld-l">Search</span>
-        <input class="ctl" type="search" id="fSearch" placeholder="Head or details contains…" autocomplete="off">
-      </div>
-    </div>
-  </div>
-
-  <div class="pills" id="repPills">
-    <button class="pill" data-r="entries" aria-pressed="true">All entries</button>
-    <button class="pill" data-r="day" aria-pressed="false">Day-wise</button>
-    <button class="pill" data-r="head" aria-pressed="false">Head-wise</button>
-    <button class="pill" data-r="mode" aria-pressed="false">Cash vs bank</button>
-    <button class="pill" data-r="month" aria-pressed="false">Month-wise</button>
-  </div>
-
-  <div class="totals">
-    <div class="tot"><span class="tot-l">Total in</span><span class="tot-v in num" id="tIn">0</span></div>
-    <div class="tot"><span class="tot-l">Total out</span><span class="tot-v out num" id="tOut">0</span></div>
-    <div class="tot"><span class="tot-l">Net</span><span class="tot-v num" id="tNet">0</span></div>
+    <button class="txt-btn" id="btnReset">Reset</button>
   </div>
 
   <div id="repScroll">
-    <div id="printTitle"><h1>Cashbook report</h1><p id="printMeta"></p></div>
+    <button class="glass filt-card" id="filtToggle">
+      <span class="fc-head">
+        <span class="fc-title">Report will be generated for</span>
+        <span class="chev" id="chev">Edit</span>
+      </span>
+      <span class="fc-grid">
+        <span class="fc-cell"><span class="fc-l">Period</span><span class="fc-v" id="sumPeriod">All time</span></span>
+        <span class="fc-cell"><span class="fc-l">Entry type</span><span class="fc-v" id="sumType">All</span></span>
+        <span class="fc-cell"><span class="fc-l">Head</span><span class="fc-v" id="sumHead">All</span></span>
+        <span class="fc-cell"><span class="fc-l">Payment mode</span><span class="fc-v" id="sumMode">All</span></span>
+        <span class="fc-cell"><span class="fc-l">Search</span><span class="fc-v" id="sumSearch">None</span></span>
+      </span>
+    </button>
+
+    <div class="glass filt-panel" id="filtPanel">
+      <div class="fgrid">
+        <div class="fld">
+          <span class="fld-l">Period</span>
+          <select class="ctl" id="fPreset">
+            <option value="all">All time</option>
+            <option value="today">Today</option>
+            <option value="week">Last 7 days</option>
+            <option value="month">This month</option>
+            <option value="lastmonth">Last month</option>
+            <option value="year">This year</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="fld">
+          <span class="fld-l">Entry type</span>
+          <select class="ctl" id="fType">
+            <option value="all">All entries</option>
+            <option value="in">Cash in only</option>
+            <option value="out">Cash out only</option>
+          </select>
+        </div>
+        <div class="fld"><span class="fld-l">From date</span><input class="ctl" type="date" id="fFrom"></div>
+        <div class="fld"><span class="fld-l">To date</span><input class="ctl" type="date" id="fTo"></div>
+        <div class="fld">
+          <span class="fld-l">Head</span>
+          <select class="ctl" id="fHeadSel"><option value="all">All heads</option></select>
+        </div>
+        <div class="fld">
+          <span class="fld-l">Payment mode</span>
+          <select class="ctl" id="fMode">
+            <option value="all">Cash &amp; bank</option>
+            <option value="cash">Cash only</option>
+            <option value="bank">Bank only</option>
+          </select>
+        </div>
+        <div class="fld wide">
+          <span class="fld-l">Search</span>
+          <input class="ctl" type="search" id="fSearch" placeholder="Head or details contains…" autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-head">Select report type</div>
+    <div class="rtypes" id="repTypes">
+      <button class="rtype" data-r="entries" aria-pressed="true">
+        <span class="radio"></span>
+        <span class="rt-t">All entries</span>
+        <span class="rt-d">Every entry with a running balance</span>
+      </button>
+      <button class="rtype" data-r="day" aria-pressed="false">
+        <span class="radio"></span>
+        <span class="rt-t">Day-wise summary</span>
+        <span class="rt-d">One line per day &mdash; in, out and net</span>
+      </button>
+      <button class="rtype" data-r="head" aria-pressed="false">
+        <span class="radio"></span>
+        <span class="rt-t">Head-wise summary</span>
+        <span class="rt-d">Totals by account head, biggest first</span>
+      </button>
+      <button class="rtype" data-r="mode" aria-pressed="false">
+        <span class="radio"></span>
+        <span class="rt-t">Cash vs bank</span>
+        <span class="rt-d">How the money splits between the two</span>
+      </button>
+      <button class="rtype" data-r="month" aria-pressed="false">
+        <span class="radio"></span>
+        <span class="rt-t">Month-wise summary</span>
+        <span class="rt-d">One line per month, for monthly closing</span>
+      </button>
+    </div>
+
+    <div class="sec-head">Totals for this selection</div>
+    <div class="tot-cards">
+      <div class="glass tot-card"><span class="tot-l">Total in</span><span class="tot-v in num" id="tIn">0</span></div>
+      <div class="glass tot-card"><span class="tot-l">Total out</span><span class="tot-v out num" id="tOut">0</span></div>
+      <div class="glass tot-card net"><span class="tot-l">Net</span><span class="tot-v num" id="tNet">0</span></div>
+    </div>
+
+    <div class="sec-head" id="resHead">Result</div>
     <div id="repBody"></div>
   </div>
 
   <div class="repfoot">
-    <button class="btn btn-ghost" id="btnRepCsv">Excel (CSV)</button>
-    <button class="btn btn-save" id="btnRepPdf">Save as PDF</button>
+    <button class="btn btn-ghost" id="btnRepCsv">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Excel
+    </button>
+    <button class="btn btn-accent" id="btnRepPdf">
+      <svg viewBox="0 0 24 24"><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 3v13M7 11l5 5 5-5"/></svg>PDF
+    </button>
   </div>
 </div>
 
@@ -369,32 +535,20 @@ label.f{display:block;margin-bottom:16px}
 
 <!-- entry sheet -->
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-  <div class="sheet-top">
-    <div class="grab"></div>
-    <h1 class="sheet-title" id="sheetTitle">Cash in</h1>
-  </div>
+  <div class="sheet-top"><div class="grab"></div><h1 class="sheet-title" id="sheetTitle">Cash in</h1></div>
   <div class="sheet-body">
-    <label class="f">
-      <span class="f-label">Date &amp; time</span>
-      <input class="f-in" type="datetime-local" id="fDate">
-    </label>
-    <label class="f">
-      <span class="f-label">Amount</span>
-      <input class="f-in amount-in num" type="text" inputmode="decimal" id="fAmount" placeholder="0" autocomplete="off">
-    </label>
+    <label class="f"><span class="f-label">Date &amp; time</span>
+      <input class="f-in" type="datetime-local" id="fDate"></label>
+    <label class="f"><span class="f-label">Amount</span>
+      <input class="f-in amount-in num" type="text" inputmode="decimal" id="fAmount" placeholder="0" autocomplete="off"></label>
     <div class="err" id="fErr"></div>
-    <label class="f">
-      <span class="f-label">Head of account</span>
+    <label class="f"><span class="f-label">Head of account</span>
       <input class="f-in" type="text" id="fHead" list="headList" placeholder="e.g. Fuel, Salary, Fees" autocomplete="off">
       <datalist id="headList"></datalist>
-      <span class="chips" id="headChips"></span>
-    </label>
-    <label class="f">
-      <span class="f-label">Details</span>
-      <input class="f-in" type="text" id="fDetail" placeholder="What was this for?" autocomplete="off">
-    </label>
-    <div class="f">
-      <span class="f-label">Paid from / received in</span>
+      <span class="chips" id="headChips"></span></label>
+    <label class="f"><span class="f-label">Details</span>
+      <input class="f-in" type="text" id="fDetail" placeholder="What was this for?" autocomplete="off"></label>
+    <div class="f"><span class="f-label">Paid from / received in</span>
       <div class="seg">
         <button type="button" id="segCash" aria-pressed="true">Cash</button>
         <button type="button" id="segBank" aria-pressed="false">Bank</button>
@@ -409,10 +563,7 @@ label.f{display:block;margin-bottom:16px}
 
 <!-- settings sheet -->
 <div class="sheet" id="setSheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-  <div class="sheet-top">
-    <div class="grab"></div>
-    <h1 class="sheet-title" id="setTitle">Settings</h1>
-  </div>
+  <div class="sheet-top"><div class="grab"></div><h1 class="sheet-title" id="setTitle">Settings</h1></div>
   <div class="sheet-body">
     <p class="note">Opening balances are what you had before you started using this app. Everything you record is added on top of them.</p>
     <div class="setrow">
@@ -422,10 +573,10 @@ label.f{display:block;margin-bottom:16px}
         <input class="f-in num" type="text" inputmode="decimal" id="sBank" autocomplete="off"></label>
     </div>
     <p class="note">Your records live on this phone only. Export a backup now and then — the file opens directly in Excel.</p>
-    <button class="btn btn-ghost" id="btnImport" style="width:100%;margin-bottom:12px">Import from Excel or CSV</button>
+    <button class="btn btn-ghost full" id="btnImport">Import from Excel or CSV</button>
     <input type="file" id="impFile" accept=".xlsx,.csv,.txt,text/csv" style="display:none">
-    <button class="btn btn-ghost" id="btnExport" style="width:100%;margin-bottom:12px">Export everything (CSV)</button>
-    <button class="btn btn-danger" id="btnWipe" style="width:100%">Erase everything</button>
+    <button class="btn btn-ghost full" id="btnExport">Export everything (CSV)</button>
+    <button class="btn btn-danger full" id="btnWipe">Erase everything</button>
     <p class="note" id="storeWarn" style="display:none;color:var(--out)"></p>
   </div>
   <div class="sheet-foot" style="grid-template-columns:1fr">
@@ -433,57 +584,31 @@ label.f{display:block;margin-bottom:16px}
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
-
 <!-- import sheet -->
 <div class="sheet" id="impSheet" role="dialog" aria-modal="true" aria-labelledby="impTitle">
-  <div class="sheet-top">
-    <div class="grab"></div>
-    <h1 class="sheet-title" id="impTitle">Import</h1>
-  </div>
+  <div class="sheet-top"><div class="grab"></div><h1 class="sheet-title" id="impTitle">Import</h1></div>
   <div class="sheet-body">
     <p class="note" id="impFileInfo"></p>
-
-    <label class="f">
-      <span class="f-label">How are amounts written?</span>
+    <label class="f"><span class="f-label">How are amounts written?</span>
       <select class="f-in" id="mLayout">
         <option value="split">Separate cash-in and cash-out columns</option>
         <option value="single">One amount column</option>
-      </select>
-    </label>
-
-    <label class="f"><span class="f-label">Date column</span>
-      <select class="f-in map" id="mDate"></select></label>
-
-    <label class="f" id="wrapIn"><span class="f-label">Cash-in column</span>
-      <select class="f-in map" id="mIn"></select></label>
-    <label class="f" id="wrapOut"><span class="f-label">Cash-out column</span>
-      <select class="f-in map" id="mOut"></select></label>
-
-    <label class="f" id="wrapAmt" style="display:none"><span class="f-label">Amount column</span>
-      <select class="f-in map" id="mAmt"></select></label>
-    <label class="f" id="wrapType" style="display:none"><span class="f-label">In / out column</span>
-      <select class="f-in map" id="mType"></select></label>
-
-    <label class="f"><span class="f-label">Head column</span>
-      <select class="f-in map" id="mHead"></select></label>
-    <label class="f"><span class="f-label">Details column</span>
-      <select class="f-in map" id="mDetail"></select></label>
-    <label class="f"><span class="f-label">Cash / bank column</span>
-      <select class="f-in map" id="mMode"></select></label>
-
+      </select></label>
+    <label class="f"><span class="f-label">Date column</span><select class="f-in map" id="mDate"></select></label>
+    <label class="f" id="wrapIn"><span class="f-label">Cash-in column</span><select class="f-in map" id="mIn"></select></label>
+    <label class="f" id="wrapOut"><span class="f-label">Cash-out column</span><select class="f-in map" id="mOut"></select></label>
+    <label class="f" id="wrapAmt" style="display:none"><span class="f-label">Amount column</span><select class="f-in map" id="mAmt"></select></label>
+    <label class="f" id="wrapType" style="display:none"><span class="f-label">In / out column</span><select class="f-in map" id="mType"></select></label>
+    <label class="f"><span class="f-label">Head column</span><select class="f-in map" id="mHead"></select></label>
+    <label class="f"><span class="f-label">Details column</span><select class="f-in map" id="mDetail"></select></label>
+    <label class="f"><span class="f-label">Cash / bank column</span><select class="f-in map" id="mMode"></select></label>
     <label class="f"><span class="f-label">If a date reads 03/04, that means</span>
       <select class="f-in" id="mDayFirst">
         <option value="1">3 April — day first</option>
         <option value="0">4 March — month first</option>
       </select></label>
-
     <label class="f"><span class="f-label">Anything without a cash/bank column counts as</span>
-      <select class="f-in" id="mDefMode">
-        <option value="cash">Cash</option>
-        <option value="bank">Bank</option>
-      </select></label>
-
+      <select class="f-in" id="mDefMode"><option value="cash">Cash</option><option value="bank">Bank</option></select></label>
     <div class="note" id="impPreview"></div>
   </div>
   <div class="sheet-foot">
@@ -492,77 +617,72 @@ label.f{display:block;margin-bottom:16px}
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
 "use strict";
 
 /* ================= storage ================= */
-var KEY = "cashbook.v1";
-var memory = null, persistent = true;
+var KEY="cashbook.v1", memory=null, persistent=true;
 function load(){
-  try{ var raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null; }
-  catch(e){ persistent = false; return memory; }
+  try{ var raw=localStorage.getItem(KEY); return raw?JSON.parse(raw):null; }
+  catch(e){ persistent=false; return memory; }
 }
 function persist(){
-  try{ localStorage.setItem(KEY, JSON.stringify(state)); }
-  catch(e){ persistent = false; memory = state; }
+  try{ localStorage.setItem(KEY,JSON.stringify(state)); }
+  catch(e){ persistent=false; memory=state; }
 }
-var state = load() || { openingCash:0, openingBank:0, txns:[] };
-if(!Array.isArray(state.txns)) state.txns = [];
+var state=load()||{ openingCash:0, openingBank:0, txns:[] };
+if(!Array.isArray(state.txns)) state.txns=[];
 
 /* ================= helpers ================= */
-var fmt = new Intl.NumberFormat("en-PK",{minimumFractionDigits:0,maximumFractionDigits:2});
-function money(n){ return (n<0 ? "\u2212" : "") + fmt.format(Math.abs(n)); }
+var fmt=new Intl.NumberFormat("en-PK",{minimumFractionDigits:0,maximumFractionDigits:2});
+function money(n){ return (n<0?"\u2212":"")+fmt.format(Math.abs(n)); }
 function plain(n){ return (Math.round(n*100)/100).toString(); }
-function parseAmt(s){
-  var n = parseFloat(String(s).replace(/[^0-9.\-]/g,""));
-  return isFinite(n) ? n : NaN;
-}
-function pad(n){ return n<10 ? "0"+n : ""+n; }
+function parseAmt(s){ var n=parseFloat(String(s).replace(/[^0-9.\-]/g,"")); return isFinite(n)?n:NaN; }
+function pad(n){ return n<10?"0"+n:""+n; }
 function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
 function toLocalInput(d){ return ymd(d)+"T"+pad(d.getHours())+":"+pad(d.getMinutes()); }
 function fromLocalInput(v){
-  var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(v);
-  return m ? new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]) : new Date();
+  var m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(v);
+  return m?new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]):new Date();
 }
-function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function esc(s){
-  return String(s).replace(/[&<>"]/g,function(c){
-    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];
-  });
-}
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 var DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 var MONS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function shortDate(d){ return d.getDate()+" "+MONS[d.getMonth()]+" "+String(d.getFullYear()).slice(2); }
 function dayLabel(d){
-  var today=new Date(), y=new Date(today.getTime()-86400000);
-  if(ymd(d)===ymd(today)) return "Today";
+  var t=new Date(), y=new Date(t.getTime()-86400000);
+  if(ymd(d)===ymd(t)) return "Today";
   if(ymd(d)===ymd(y)) return "Yesterday";
   var s=d.getDate()+" "+MONS[d.getMonth()];
-  if(d.getFullYear()!==today.getFullYear()) s+=" "+d.getFullYear();
+  if(d.getFullYear()!==t.getFullYear()) s+=" "+d.getFullYear();
   return s+" \u00B7 "+DAYS[d.getDay()];
 }
 function timeLabel(d){
   var h=d.getHours(), ap=h>=12?"PM":"AM", hh=h%12; if(hh===0) hh=12;
   return hh+":"+pad(d.getMinutes())+" "+ap;
 }
-var el = function(id){ return document.getElementById(id); };
+var el=function(id){ return document.getElementById(id); };
 
 /* ================= core data ================= */
 function sorted(){
   return state.txns.slice().sort(function(a,b){
-    if(a.ts===b.ts) return a.id<b.id ? -1 : 1;
-    return a.ts<b.ts ? -1 : 1;
+    if(a.ts===b.ts) return a.id<b.id?-1:1;
+    return a.ts<b.ts?-1:1;
   });
 }
 function balances(){
   var c=+state.openingCash||0, b=+state.openingBank||0;
   state.txns.forEach(function(t){
-    var s = t.type==="in" ? +t.amount : -t.amount;
+    var s=t.type==="in"?+t.amount:-t.amount;
     if(t.account==="bank") b+=s; else c+=s;
   });
   return { cash:c, bank:b, total:c+b };
 }
-function headOf(t){ return (t.head && t.head.trim()) ? t.head.trim() : "Uncategorised"; }
+function headOf(t){ return (t.head&&t.head.trim())?t.head.trim():"Uncategorised"; }
 function allHeads(){
   var seen={}, out=[];
   sorted().forEach(function(t){
@@ -572,59 +692,57 @@ function allHeads(){
   return out.sort(function(a,b){ return a.localeCompare(b); });
 }
 
-/* ================= home render ================= */
-function setBal(node,v){ node.textContent=money(v); node.classList.toggle("neg", v<0); }
-
+/* ================= home ================= */
+function setBal(n,v){ n.textContent=money(v); n.classList.toggle("neg",v<0); }
 function render(){
   var b=balances();
   setBal(el("balCash"),b.cash); setBal(el("balBank"),b.bank); setBal(el("balTotal"),b.total);
-
   var list=el("list"), rows=sorted();
   if(!rows.length){
-    list.innerHTML='<div class="empty"><h2>No entries yet</h2>'+
-      '<p>Tap <b>Cash in</b> when money comes in, <b>Cash out</b> when it goes out. '+
+    list.innerHTML='<div class="glass empty"><h2>No entries yet</h2>'+
+      '<p>Tap <b>Cash In</b> when money comes in, <b>Cash Out</b> when it goes out. '+
       'Set your opening balances in Settings first.</p></div>';
     return;
   }
   var run=(+state.openingCash||0)+(+state.openingBank||0), runMap={};
-  rows.forEach(function(t){ run += t.type==="in"?+t.amount:-t.amount; runMap[t.id]=run; });
+  rows.forEach(function(t){ run+=t.type==="in"?+t.amount:-t.amount; runMap[t.id]=run; });
   rows.reverse();
-
   var groups=[], cur=null;
   rows.forEach(function(t){
     var d=new Date(t.ts), k=ymd(d);
     if(!cur||cur.k!==k){ cur={k:k,d:d,items:[]}; groups.push(cur); }
     cur.items.push(t);
   });
-
   var html="";
   groups.forEach(function(g){
     var net=0;
-    g.items.forEach(function(t){ net += t.type==="in"?+t.amount:-t.amount; });
+    g.items.forEach(function(t){ net+=t.type==="in"?+t.amount:-t.amount; });
     html+='<div class="daygroup"><div class="dayhead">'+
       '<span class="daydate">'+esc(dayLabel(g.d))+'</span>'+
-      '<span class="daynet num">'+(net>=0?"+":"")+money(net)+'</span></div>';
+      '<span class="daynet num">'+(net>=0?"+":"")+money(net)+'</span></div><div class="glass rows">';
     g.items.forEach(function(t){
       var d=new Date(t.ts), sign=t.type==="in"?"+":"\u2212";
       html+='<button class="row" data-id="'+t.id+'">'+
+        '<span class="r-ico '+t.type+'">'+(t.type==="in"?"+":"\u2212")+'</span>'+
         '<span class="r-head">'+esc(headOf(t))+'</span>'+
         '<span class="r-amt num '+t.type+'">'+sign+money(t.amount)+'</span>'+
-        '<span class="r-meta"><span class="tag">'+(t.account==="bank"?"Bank":"Cash")+'</span>'+
-        esc(timeLabel(d))+(t.detail?" \u00B7 "+esc(t.detail):"")+'</span>'+
+        '<span class="r-meta"><span class="pill-tag '+(t.account==="bank"?"bank":"cash")+'">'+
+          (t.account==="bank"?"Bank":"Cash")+'</span>'+esc(timeLabel(d))+
+          (t.detail?" \u00B7 "+esc(t.detail):"")+'</span>'+
         '<span class="r-bal num">'+money(runMap[t.id])+'</span>'+
       '</button>';
     });
-    html+='</div>';
+    html+='</div></div>';
   });
   list.innerHTML=html;
 }
 
 /* ================= toast ================= */
 var toastTimer;
-function toast(msg){
+function toast(msg,ms){
   var t=el("toast"); t.textContent=msg; t.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(function(){ t.classList.remove("show"); },2200);
+  toastTimer=setTimeout(function(){ t.classList.remove("show"); }, ms||2400);
 }
 
 /* ================= sheets ================= */
@@ -640,8 +758,8 @@ el("scrim").addEventListener("click",hide);
 var editingId=null, curType="in", curAccount="cash";
 function setAccount(a){
   curAccount=a;
-  el("segCash").setAttribute("aria-pressed", a==="cash"?"true":"false");
-  el("segBank").setAttribute("aria-pressed", a==="bank"?"true":"false");
+  el("segCash").setAttribute("aria-pressed",a==="cash"?"true":"false");
+  el("segBank").setAttribute("aria-pressed",a==="bank"?"true":"false");
 }
 el("segCash").addEventListener("click",function(){ setAccount("cash"); });
 el("segBank").addEventListener("click",function(){ setAccount("bank"); });
@@ -650,16 +768,14 @@ function fillHeads(){
   var recent=[], seen={};
   sorted().reverse().forEach(function(t){
     var h=headOf(t);
-    if(h!=="Uncategorised" && !seen[h.toLowerCase()]){ seen[h.toLowerCase()]=1; recent.push(h); }
+    if(h!=="Uncategorised"&&!seen[h.toLowerCase()]){ seen[h.toLowerCase()]=1; recent.push(h); }
   });
   el("headList").innerHTML=recent.map(function(h){ return '<option value="'+esc(h)+'">'; }).join("");
   el("headChips").innerHTML=recent.slice(0,6).map(function(h){
-    return '<button type="button" class="chip">'+esc(h)+'</button>';
-  }).join("");
+    return '<button type="button" class="chip">'+esc(h)+'</button>'; }).join("");
 }
 el("headChips").addEventListener("click",function(e){
-  var c=e.target.closest(".chip");
-  if(c) el("fHead").value=c.textContent;
+  var c=e.target.closest(".chip"); if(c) el("fHead").value=c.textContent;
 });
 
 function openEntry(type,txn){
@@ -676,7 +792,6 @@ function openEntry(type,txn){
   el("fHead").value=txn?(txn.head||""):"";
   el("fDetail").value=txn?(txn.detail||""):"";
   setAccount(txn?txn.account:"cash");
-
   var foot=el("sheet").querySelector(".sheet-foot"), del=el("btnDelete");
   if(editingId){
     if(!del){
@@ -696,35 +811,25 @@ function openEntry(type,txn){
 el("btnIn").addEventListener("click",function(){ openEntry("in"); });
 el("btnOut").addEventListener("click",function(){ openEntry("out"); });
 el("btnCancel").addEventListener("click",hide);
-
 el("list").addEventListener("click",function(e){
-  var row=e.target.closest(".row");
-  if(!row) return;
+  var row=e.target.closest(".row"); if(!row) return;
   var t=state.txns.filter(function(x){ return x.id===row.dataset.id; })[0];
   if(t) openEntry(t.type,t);
 });
-
 el("btnSave").addEventListener("click",function(){
   var amt=parseAmt(el("fAmount").value);
   if(!isFinite(amt)||amt<=0){
     el("fErr").textContent="Enter an amount greater than zero.";
     el("fAmount").focus(); return;
   }
-  var rec={
-    id: editingId||uid(),
-    ts: fromLocalInput(el("fDate").value).toISOString(),
-    type: curType,
-    amount: Math.round(amt*100)/100,
-    head: el("fHead").value.trim(),
-    detail: el("fDetail").value.trim(),
-    account: curAccount
-  };
+  var rec={ id:editingId||uid(), ts:fromLocalInput(el("fDate").value).toISOString(),
+    type:curType, amount:Math.round(amt*100)/100,
+    head:el("fHead").value.trim(), detail:el("fDetail").value.trim(), account:curAccount };
   if(editingId) state.txns=state.txns.map(function(t){ return t.id===editingId?rec:t; });
   else state.txns.push(rec);
-  persist(); render(); if(curView==="reports") renderReport(); hide();
+  persist(); render(); if(curView==="reports"){ syncHeadOptions(); renderReport(); } hide();
   toast(editingId?"Entry updated":(curType==="in"?"Cash in recorded":"Cash out recorded"));
 });
-
 function doDelete(){
   if(!editingId) return;
   if(!confirm("Delete this entry? This cannot be undone.")) return;
@@ -745,8 +850,7 @@ el("btnSettings").addEventListener("click",function(){
 });
 el("btnSetDone").addEventListener("click",function(){
   var c=parseAmt(el("sCash").value), b=parseAmt(el("sBank").value);
-  state.openingCash=isFinite(c)?c:0;
-  state.openingBank=isFinite(b)?b:0;
+  state.openingCash=isFinite(c)?c:0; state.openingBank=isFinite(b)?b:0;
   persist(); render(); hide(); toast("Opening balances saved");
 });
 el("btnWipe").addEventListener("click",function(){
@@ -755,38 +859,50 @@ el("btnWipe").addEventListener("click",function(){
   persist(); render(); hide(); toast("All entries erased");
 });
 
-/* ================= CSV download ================= */
-function download(name, text){
-  var blob=new Blob(["\uFEFF"+text],{type:"text/csv;charset=utf-8;"});
+/* ================= file delivery: share sheet, else download ================= */
+async function deliver(blob, filename, label){
+  try{
+    if(navigator.canShare && typeof File!=="undefined"){
+      var f=new File([blob],filename,{type:blob.type});
+      if(navigator.canShare({files:[f]})){
+        await navigator.share({ files:[f], title:label||filename });
+        return "shared";
+      }
+    }
+  }catch(e){
+    if(e && e.name==="AbortError") return "cancelled";
+  }
   var a=document.createElement("a");
-  a.href=URL.createObjectURL(blob); a.download=name;
+  a.href=URL.createObjectURL(blob); a.download=filename;
   document.body.appendChild(a); a.click();
-  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1000);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1500);
+  return "downloaded";
 }
+function csvBlob(text){ return new Blob(["\uFEFF"+text],{type:"text/csv;charset=utf-8;"}); }
 function q(s){ return '"'+String(s==null?"":s).replace(/"/g,'""')+'"'; }
 
 el("btnExport").addEventListener("click",function(){
   var rows=sorted();
   if(!rows.length){ toast("Nothing to export yet"); return; }
   var run=(+state.openingCash||0)+(+state.openingBank||0);
-  var out=["Date,Time,Type,Head,Details,Account,Cash In,Cash Out,Running Balance"];
+  var out=["Date,Time,Type,Head,Details,Mode,Cash In,Cash Out,Balance"];
   rows.forEach(function(t){
     var d=new Date(t.ts);
-    run += t.type==="in"?+t.amount:-t.amount;
+    run+=t.type==="in"?+t.amount:-t.amount;
     out.push([q(shortDate(d)),q(timeLabel(d)),q(t.type==="in"?"Cash In":"Cash Out"),
       q(headOf(t)),q(t.detail),q(t.account==="bank"?"Bank":"Cash"),
       t.type==="in"?plain(t.amount):"", t.type==="out"?plain(t.amount):"", plain(run)].join(","));
   });
-  download("cashbook-all-"+ymd(new Date())+".csv", out.join("\r\n"));
-  toast("Exported");
+  deliver(csvBlob(out.join("\r\n")),"cashbook-all-"+ymd(new Date())+".csv","Cashbook backup")
+    .then(function(r){ if(r!=="cancelled") toast(r==="shared"?"Shared":"Saved to Downloads"); });
 });
 
 /* ================= views ================= */
 var curView="home";
 function goto(v){
   curView=v;
-  el("homeView").classList.toggle("active", v==="home");
-  el("reportsView").classList.toggle("active", v==="reports");
+  el("homeView").classList.toggle("active",v==="home");
+  el("reportsView").classList.toggle("active",v==="reports");
   if(v==="reports"){ syncHeadOptions(); renderReport(); }
 }
 el("btnReports").addEventListener("click",function(){ goto("reports"); });
@@ -794,53 +910,69 @@ el("btnBack").addEventListener("click",function(){ goto("home"); });
 
 /* ================= filters ================= */
 var repType="entries";
+var RTYPE_NAMES={entries:"All entries",day:"Day-wise summary",head:"Head-wise summary",
+                 mode:"Cash vs bank",month:"Month-wise summary"};
 
-function monthStart(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+el("filtToggle").addEventListener("click",function(){
+  var open=el("filtPanel").classList.toggle("open");
+  el("chev").textContent=open?"Done":"Edit";
+});
+
+function monthStart(d){ return new Date(d.getFullYear(),d.getMonth(),1); }
 function applyPreset(p){
   var now=new Date(), from=null, to=null;
   if(p==="today"){ from=new Date(now.getFullYear(),now.getMonth(),now.getDate()); to=from; }
   else if(p==="week"){ to=now; from=new Date(now.getTime()-6*86400000); }
   else if(p==="month"){ from=monthStart(now); to=now; }
   else if(p==="lastmonth"){
-    var lm=new Date(now.getFullYear(),now.getMonth()-1,1);
-    from=lm; to=new Date(now.getFullYear(),now.getMonth(),0);
+    from=new Date(now.getFullYear(),now.getMonth()-1,1);
+    to=new Date(now.getFullYear(),now.getMonth(),0);
   }
   else if(p==="year"){ from=new Date(now.getFullYear(),0,1); to=now; }
-  if(p==="custom") return;                /* leave whatever dates are set */
-  if(p==="all" || !from || !to){ el("fFrom").value=""; el("fTo").value=""; }
+  if(p==="custom") return;
+  if(p==="all"||!from||!to){ el("fFrom").value=""; el("fTo").value=""; }
   else { el("fFrom").value=ymd(from); el("fTo").value=ymd(to); }
 }
 function syncHeadOptions(){
   var sel=el("fHeadSel"), keep=sel.value;
   var opts='<option value="all">All heads</option>';
   allHeads().forEach(function(h){ opts+='<option value="'+esc(h)+'">'+esc(h)+'</option>'; });
-  sel.innerHTML=opts;
-  sel.value=keep; if(!sel.value) sel.value="all";
+  sel.innerHTML=opts; sel.value=keep; if(!sel.value) sel.value="all";
 }
 function readFilters(){
-  return {
-    from: el("fFrom").value,
-    to: el("fTo").value,
-    type: el("fType").value,
-    head: el("fHeadSel").value,
-    mode: el("fMode").value,
-    q: el("fSearch").value.trim().toLowerCase()
-  };
+  return { from:el("fFrom").value, to:el("fTo").value, type:el("fType").value,
+           head:el("fHeadSel").value, mode:el("fMode").value,
+           q:el("fSearch").value.trim().toLowerCase() };
 }
 function filtered(){
   var f=readFilters();
   var from=f.from?new Date(f.from+"T00:00:00"):null;
-  var to  =f.to  ?new Date(f.to  +"T23:59:59.999"):null;
+  var to=f.to?new Date(f.to+"T23:59:59.999"):null;
   return sorted().filter(function(t){
     var d=new Date(t.ts);
-    if(from && d<from) return false;
-    if(to && d>to) return false;
-    if(f.type!=="all" && t.type!==f.type) return false;
-    if(f.mode!=="all" && t.account!==f.mode) return false;
-    if(f.head!=="all" && headOf(t)!==f.head) return false;
-    if(f.q && ((t.head||"")+" "+(t.detail||"")).toLowerCase().indexOf(f.q)<0) return false;
+    if(from&&d<from) return false;
+    if(to&&d>to) return false;
+    if(f.type!=="all"&&t.type!==f.type) return false;
+    if(f.mode!=="all"&&t.account!==f.mode) return false;
+    if(f.head!=="all"&&headOf(t)!==f.head) return false;
+    if(f.q&&((t.head||"")+" "+(t.detail||"")).toLowerCase().indexOf(f.q)<0) return false;
     return true;
   });
+}
+function periodText(){
+  var f=readFilters();
+  if(!f.from&&!f.to) return "All time";
+  var a=f.from?shortDate(new Date(f.from+"T00:00:00")):"Start";
+  var b=f.to?shortDate(new Date(f.to+"T00:00:00")):"Today";
+  return a+" \u2013 "+b;
+}
+function updateSummary(){
+  var f=readFilters();
+  el("sumPeriod").textContent=periodText();
+  el("sumType").textContent=f.type==="all"?"All":(f.type==="in"?"Cash in":"Cash out");
+  el("sumHead").textContent=f.head==="all"?"All heads":f.head;
+  el("sumMode").textContent=f.mode==="all"?"Cash & bank":(f.mode==="cash"?"Cash":"Bank");
+  el("sumSearch").textContent=f.q?el("fSearch").value.trim():"None";
 }
 
 ["fType","fFrom","fTo","fHeadSel","fMode"].forEach(function(id){
@@ -850,27 +982,24 @@ function filtered(){
   });
 });
 el("fSearch").addEventListener("input",renderReport);
-el("fPreset").addEventListener("change",function(){
-  applyPreset(this.value); renderReport();
-});
+el("fPreset").addEventListener("change",function(){ applyPreset(this.value); renderReport(); });
 el("btnReset").addEventListener("click",function(){
   el("fPreset").value="all"; applyPreset("all");
   el("fType").value="all"; el("fMode").value="all";
   el("fHeadSel").value="all"; el("fSearch").value="";
   renderReport(); toast("Filters cleared");
 });
-el("repPills").addEventListener("click",function(e){
-  var p=e.target.closest(".pill");
-  if(!p) return;
+el("repTypes").addEventListener("click",function(e){
+  var p=e.target.closest(".rtype"); if(!p) return;
   repType=p.dataset.r;
-  Array.prototype.forEach.call(this.querySelectorAll(".pill"),function(x){
-    x.setAttribute("aria-pressed", x===p?"true":"false");
+  Array.prototype.forEach.call(this.querySelectorAll(".rtype"),function(x){
+    x.setAttribute("aria-pressed",x===p?"true":"false");
   });
   renderReport();
 });
 
 /* ================= report building ================= */
-function groupBy(rows, keyFn, labelFn){
+function groupBy(rows,keyFn,labelFn){
   var map={}, order=[];
   rows.forEach(function(t){
     var k=keyFn(t);
@@ -882,215 +1011,434 @@ function groupBy(rows, keyFn, labelFn){
   return order.map(function(k){ return map[k]; });
 }
 
-var lastTable=null; /* {headers:[], rows:[[]], align:[] } for CSV */
+/* lastTable holds full column data, used by both CSV and PDF */
+var lastTable=null;
 
 function renderReport(){
-  var rows=filtered();
-  var tin=0, tout=0;
+  updateSummary();
+  var rows=filtered(), tin=0, tout=0;
   rows.forEach(function(t){ if(t.type==="in") tin+=+t.amount; else tout+=+t.amount; });
   el("tIn").textContent=money(tin);
   el("tOut").textContent=money(tout);
   var net=tin-tout;
   el("tNet").textContent=money(net);
-  el("tNet").classList.toggle("neg", net<0);
-
-  var f=readFilters();
-  el("printMeta").textContent =
-    (f.from||f.to ? ((f.from||"start")+"  to  "+(f.to||"today")) : "All time") +
-    "  \u00B7  " + (f.head==="all"?"All heads":f.head) +
-    "  \u00B7  " + (f.mode==="all"?"Cash & bank":(f.mode==="cash"?"Cash":"Bank")) +
-    "  \u00B7  In "+money(tin)+"   Out "+money(tout)+"   Net "+money(net);
+  el("tNet").classList.toggle("neg",net<0);
+  el("resHead").textContent=RTYPE_NAMES[repType]+(rows.length?" \u00B7 "+rows.length+" entries":"");
 
   var body=el("repBody");
   if(!rows.length){
     lastTable=null;
-    body.innerHTML='<div class="empty"><h2>Nothing matches</h2>'+
+    body.innerHTML='<div class="glass empty"><h2>Nothing matches</h2>'+
       '<p>No entries fall inside these filters. Widen the dates, or tap Reset.</p></div>';
     return;
   }
-
-  if(repType==="entries") body.innerHTML=tableEntries(rows);
-  else if(repType==="day") body.innerHTML=tableGroup(groupBy(rows,function(t){ return ymd(new Date(t.ts)); },
-      function(t){ return shortDate(new Date(t.ts)); }), "Date", true);
-  else if(repType==="month") body.innerHTML=tableGroup(groupBy(rows,function(t){
-      var d=new Date(t.ts); return d.getFullYear()+"-"+pad(d.getMonth()+1);
-    }, function(t){ var d=new Date(t.ts); return MONS[d.getMonth()]+" "+d.getFullYear(); }), "Month", true);
-  else if(repType==="head") body.innerHTML=tableGroup(
-      groupBy(rows,headOf,headOf).sort(function(a,b){ return (b.in+b.out)-(a.in+a.out); }), "Head", false);
-  else if(repType==="mode") body.innerHTML=tableGroup(
+  if(repType==="entries") buildEntries(rows);
+  else if(repType==="day") buildGroup(groupBy(rows,function(t){ return ymd(new Date(t.ts)); },
+      function(t){ return shortDate(new Date(t.ts)); }),"Date",true);
+  else if(repType==="month") buildGroup(groupBy(rows,function(t){
+      var d=new Date(t.ts); return d.getFullYear()+"-"+pad(d.getMonth()+1); },
+      function(t){ var d=new Date(t.ts); return MONS[d.getMonth()]+" "+d.getFullYear(); }),"Month",true);
+  else if(repType==="head") buildGroup(
+      groupBy(rows,headOf,headOf).sort(function(a,b){ return (b.in+b.out)-(a.in+a.out); }),"Head",false);
+  else if(repType==="mode") buildGroup(
       groupBy(rows,function(t){ return t.account==="bank"?"bank":"cash"; },
-              function(t){ return t.account==="bank"?"Bank":"Cash"; }), "Mode", false);
+              function(t){ return t.account==="bank"?"Bank":"Cash"; }),"Mode",false);
+  body.innerHTML=tableHtml();
 }
 
-function tableEntries(rows){
-  var run=0, csv=[];
-  var h='<table class="rep"><thead><tr>'+
-    '<th class="l">Date &amp; head</th><th>In</th><th>Out</th><th>Running</th>'+
-    '</tr></thead><tbody>';
+function buildEntries(rows){
+  var run=0, data=[], ti=0, to=0;
   rows.forEach(function(t){
     var d=new Date(t.ts);
-    run += t.type==="in"?+t.amount:-t.amount;
-    h+='<tr><td class="l">'+
-        '<div class="cellhead">'+esc(headOf(t))+'</div>'+
-        '<div class="cellsub">'+esc(shortDate(d))+" \u00B7 "+esc(timeLabel(d))+
-        ' \u00B7 '+(t.account==="bank"?"Bank":"Cash")+
-        (t.detail? " \u00B7 "+esc(t.detail):"")+'</div></td>'+
-      '<td class="num cin">'+(t.type==="in"?money(t.amount):"")+'</td>'+
-      '<td class="num cout">'+(t.type==="out"?money(t.amount):"")+'</td>'+
-      '<td class="num'+(run<0?" neg":"")+'">'+money(run)+'</td></tr>';
-    csv.push([shortDate(d),timeLabel(d),headOf(t),t.detail||"",
-      t.account==="bank"?"Bank":"Cash",
-      t.type==="in"?plain(t.amount):"", t.type==="out"?plain(t.amount):"", plain(run)]);
+    run+=t.type==="in"?+t.amount:-t.amount;
+    if(t.type==="in") ti+=+t.amount; else to+=+t.amount;
+    data.push([ shortDate(d), t.detail||"", headOf(t), t.account==="bank"?"Bank":"Cash",
+      t.type==="in"?plain(t.amount):"", t.type==="out"?plain(t.amount):"", plain(run) ]);
   });
-  var ti=0,to=0;
-  rows.forEach(function(t){ if(t.type==="in") ti+=+t.amount; else to+=+t.amount; });
-  h+='<tr class="grand"><td class="l">Total \u00B7 '+rows.length+' entries</td>'+
-     '<td class="num cin">'+money(ti)+'</td><td class="num cout">'+money(to)+'</td>'+
-     '<td class="num'+((ti-to)<0?" neg":"")+'">'+money(ti-to)+'</td></tr>';
-  h+='</tbody></table>';
-  lastTable={ headers:["Date","Time","Head","Details","Mode","Cash In","Cash Out","Running"],
-              rows:csv, totals:["Total","","","","",plain(ti),plain(to),plain(ti-to)] };
-  return h;
+  lastTable={
+    cols:[ {t:"Date",     w:70,  a:"l"},
+           {t:"Details",  w:206, a:"l"},
+           {t:"Head",     w:140, a:"l"},
+           {t:"Mode",     w:55,  a:"c"},
+           {t:"Cash In",  w:100, a:"r", cls:"cin"},
+           {t:"Cash Out", w:100, a:"r", cls:"cout"},
+           {t:"Balance",  w:107, a:"r"} ],
+    rows:data,
+    totals:["Total",rows.length+" entries","","",plain(ti),plain(to),plain(ti-to)],
+    wide:true
+  };
 }
 
-function tableGroup(groups, label, chrono){
+function buildGroup(groups,label,chrono){
   if(chrono) groups=groups.slice().reverse();
-  var ti=0,to=0, csv=[];
-  var h='<table class="rep"><thead><tr>'+
-    '<th class="l">'+esc(label)+'</th><th>In</th><th>Out</th><th>Net</th>'+
-    '</tr></thead><tbody>';
+  var ti=0, to=0, data=[];
   groups.forEach(function(g){
     ti+=g.in; to+=g.out;
-    var n=g.in-g.out;
-    h+='<tr><td class="l"><div class="cellhead">'+esc(g.label)+'</div>'+
-        '<div class="cellsub">'+g.n+(g.n===1?" entry":" entries")+'</div></td>'+
-      '<td class="num cin">'+(g.in?money(g.in):"")+'</td>'+
-      '<td class="num cout">'+(g.out?money(g.out):"")+'</td>'+
-      '<td class="num'+(n<0?" neg":"")+'">'+money(n)+'</td></tr>';
-    csv.push([g.label,g.n,plain(g.in),plain(g.out),plain(n)]);
+    data.push([ g.label, String(g.n), g.in?plain(g.in):"", g.out?plain(g.out):"", plain(g.in-g.out) ]);
   });
-  h+='<tr class="grand"><td class="l">Total</td>'+
-     '<td class="num cin">'+money(ti)+'</td><td class="num cout">'+money(to)+'</td>'+
-     '<td class="num'+((ti-to)<0?" neg":"")+'">'+money(ti-to)+'</td></tr></tbody></table>';
-  lastTable={ headers:[label,"Entries","Cash In","Cash Out","Net"], rows:csv,
-              totals:["Total","",plain(ti),plain(to),plain(ti-to)] };
+  lastTable={
+    cols:[ {t:label,      w:270, a:"l"},
+           {t:"Entries",  w:80,  a:"c"},
+           {t:"Cash In",  w:140, a:"r", cls:"cin"},
+           {t:"Cash Out", w:140, a:"r", cls:"cout"},
+           {t:"Net",      w:148, a:"r"} ],
+    rows:data,
+    totals:["Total","",plain(ti),plain(to),plain(ti-to)],
+    wide:false
+  };
+}
+
+function cellShow(v,col){
+  if(v==="") return "";
+  return col.a==="r" ? money(+v) : esc(v);
+}
+function tableHtml(){
+  var T=lastTable;
+  var h='<div class="tablewrap"><table class="rep'+(T.wide?" wide":"")+'"><thead><tr>';
+  T.cols.forEach(function(c){
+    h+='<th class="'+(c.a==="l"?"l":"")+'">'+esc(c.t)+'</th>';
+  });
+  h+='</tr></thead><tbody>';
+  T.rows.forEach(function(r){
+    h+='<tr>';
+    r.forEach(function(v,i){
+      var c=T.cols[i];
+      h+='<td class="'+(c.a==="l"?"l ":"")+(c.cls&&v!==""?c.cls:"")+
+         (c.a==="r"?" num":"")+'">'+cellShow(v,c)+'</td>';
+    });
+    h+='</tr>';
+  });
+  h+='<tr class="grand">';
+  T.totals.forEach(function(v,i){
+    var c=T.cols[i];
+    h+='<td class="'+(c.a==="l"?"l ":"")+(c.a==="r"?"num":"")+'">'+
+       (c.a==="r"&&v!==""?money(+v):esc(v))+'</td>';
+  });
+  h+='</tr></tbody></table></div>';
   return h;
 }
 
-/* ================= report export ================= */
+/* ================= CSV of current report ================= */
 el("btnRepCsv").addEventListener("click",function(){
   if(!lastTable){ toast("Nothing to export"); return; }
   var f=readFilters();
-  var meta=[
-    ["Cashbook report"],
-    ["Period", (f.from||"start")+" to "+(f.to||"today")],
-    ["Entry type", f.type==="all"?"All":(f.type==="in"?"Cash in":"Cash out")],
-    ["Head", f.head==="all"?"All":f.head],
-    ["Payment mode", f.mode==="all"?"Cash & bank":(f.mode==="cash"?"Cash":"Bank")],
-    ["Search", f.q||"none"],
+  var lines=[
+    ["Cashbook \u2014 "+RTYPE_NAMES[repType]],
+    ["Period",periodText()],
+    ["Entry type",f.type==="all"?"All":(f.type==="in"?"Cash in":"Cash out")],
+    ["Head",f.head==="all"?"All":f.head],
+    ["Payment mode",f.mode==="all"?"Cash & bank":(f.mode==="cash"?"Cash":"Bank")],
+    ["Search",f.q||"none"],
     []
   ].map(function(r){ return r.map(q).join(","); });
-  var lines=meta
-    .concat([lastTable.headers.map(q).join(",")])
-    .concat(lastTable.rows.map(function(r){ return r.map(q).join(","); }))
-    .concat([lastTable.totals.map(q).join(",")]);
-  download("cashbook-"+repType+"-"+ymd(new Date())+".csv", lines.join("\r\n"));
-  toast("Report exported");
+  lines.push(lastTable.cols.map(function(c){ return q(c.t); }).join(","));
+  lastTable.rows.forEach(function(r){ lines.push(r.map(q).join(",")); });
+  lines.push(lastTable.totals.map(q).join(","));
+  deliver(csvBlob(lines.join("\r\n")),"cashbook-"+repType+"-"+ymd(new Date())+".csv",
+    "Cashbook report").then(function(r){
+    if(r!=="cancelled") toast(r==="shared"?"Shared":"Saved to Downloads");
+  });
 });
 
-el("btnRepPdf").addEventListener("click",function(){
-  if(!lastTable){ toast("Nothing to print"); return; }
-  toast("Choose \u201cSave as PDF\u201d as the printer");
-  setTimeout(function(){ window.print(); }, 400);
-});
+/* ================= PDF writer =================
+   Builds a real PDF by hand: no library, works offline.
+   Base-14 Helvetica means no font embedding, but also means
+   Latin characters only. Non-Latin text is flagged, not silently dropped. */
 
-/* ================= import: file readers ================= */
+var HELV_W = (function(){
+  var w={}, i;
+  for(i=32;i<127;i++) w[i]=556;
+  var t={32:278,33:278,34:355,35:556,36:556,37:889,38:667,39:191,40:333,41:333,42:389,
+    43:584,44:278,45:333,46:278,47:278,58:278,59:278,60:584,61:584,62:584,63:556,64:1015,
+    65:667,66:667,67:722,68:722,69:667,70:611,71:778,72:722,73:278,74:500,75:667,76:556,
+    77:833,78:722,79:778,80:667,81:778,82:722,83:667,84:611,85:722,86:667,87:944,88:667,
+    89:667,90:611,91:278,92:278,93:278,94:469,95:556,96:333,97:556,98:556,99:500,100:556,
+    101:556,102:278,103:556,104:556,105:222,106:222,107:500,108:222,109:833,110:556,
+    111:556,112:556,113:556,114:333,115:500,116:278,117:556,118:500,119:722,120:500,
+    121:500,122:500,123:334,124:260,125:334,126:584};
+  for(i in t) w[i]=t[i];
+  return w;
+})();
+var HELVB_W = (function(){
+  var w={}, i;
+  for(i=32;i<127;i++) w[i]=556;
+  var t={32:278,40:333,41:333,44:278,45:333,46:278,47:278,58:333,59:333,
+    65:722,66:722,67:722,68:722,69:667,70:611,71:778,72:722,73:278,74:556,75:722,76:611,
+    77:833,78:722,79:778,80:667,81:778,82:722,83:667,84:611,85:722,86:667,87:944,88:667,
+    89:667,90:611,97:556,98:611,99:556,100:611,101:556,102:333,103:611,104:611,105:278,
+    106:278,107:556,108:278,109:889,110:611,111:611,112:611,113:611,114:389,115:556,
+    116:333,117:611,118:556,119:778,120:556,121:556,122:500};
+  for(i in t) w[i]=t[i];
+  return w;
+})();
 
-/* -- minimal ZIP reader (xlsx is a zip of xml), uses Chrome's built-in inflate -- */
-function u16(b,o){ return b[o]|(b[o+1]<<8); }
-function u32(b,o){ return (b[o]|(b[o+1]<<8)|(b[o+2]<<16)|(b[o+3]<<24))>>>0; }
-
-async function inflateRaw(bytes){
-  if(typeof DecompressionStream === "undefined") throw new Error("nodeflate");
-  var s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-  return new Uint8Array(await new Response(s).arrayBuffer());
-}
-
-async function unzip(buf){
-  /* locate end-of-central-directory record */
-  var eocd = -1;
-  for(var i=buf.length-22; i>=0 && i>buf.length-66000; i--){
-    if(u32(buf,i)===0x06054b50){ eocd=i; break; }
-  }
-  if(eocd<0) throw new Error("notzip");
-  var count = u16(buf,eocd+10), dir = u32(buf,eocd+16);
-  var out = {}, p = dir;
-  for(var n=0; n<count; n++){
-    if(u32(buf,p)!==0x02014b50) break;
-    var method = u16(buf,p+10);
-    var csize  = u32(buf,p+20);
-    var fnLen  = u16(buf,p+28), exLen = u16(buf,p+30), cmLen = u16(buf,p+32);
-    var lho    = u32(buf,p+42);
-    var name   = new TextDecoder().decode(buf.subarray(p+46, p+46+fnLen));
-    /* local header can disagree with the directory, so read its own lengths */
-    var lfn = u16(buf,lho+26), lex = u16(buf,lho+28);
-    var start = lho+30+lfn+lex;
-    var raw = buf.subarray(start, start+csize);
-    out[name] = { method:method, raw:raw };
-    p += 46+fnLen+exLen+cmLen;
+/* map a few common unicode chars into WinAnsi slots, flag the rest */
+var pdfLostChars=false;
+function toWinAnsi(s){
+  var out=[], i, c;
+  for(i=0;i<s.length;i++){
+    c=s.charCodeAt(i);
+    if(c===0x2212||c===0x2013||c===0x2014) c=45;      /* minus, en/em dash -> hyphen */
+    else if(c===0x2018||c===0x2019) c=39;             /* curly quotes */
+    else if(c===0x201C||c===0x201D) c=34;
+    else if(c===0x2026) c=133;                        /* ellipsis */
+    else if(c===0x00B7) c=183;
+    if(c>255){ pdfLostChars=true; c=63; }             /* '?' */
+    out.push(c);
   }
   return out;
 }
-async function zipText(entries, name){
-  var e = entries[name];
+function textWidth(s,size,bold){
+  var codes=toWinAnsi(s), tbl=bold?HELVB_W:HELV_W, w=0;
+  for(var i=0;i<codes.length;i++) w += (tbl[codes[i]]||556);
+  return w*size/1000;
+}
+function pdfStr(s){
+  var codes=toWinAnsi(s), out="";
+  for(var i=0;i<codes.length;i++){
+    var c=codes[i];
+    if(c===40||c===41||c===92) out+="\\"+String.fromCharCode(c);
+    else if(c<32||c>126) out+="\\"+("00"+c.toString(8)).slice(-3);
+    else out+=String.fromCharCode(c);
+  }
+  return out;
+}
+function fit(s,maxW,size,bold){
+  if(textWidth(s,size,bold)<=maxW) return s;
+  var t=s;
+  while(t.length>1 && textWidth(t+"\u2026",size,bold)>maxW) t=t.slice(0,-1);
+  return t+"\u2026";
+}
+
+function buildPdf(opt){
+  pdfLostChars=false;
+  var PW=842, PH=595, M=30;
+  var avail=PW-M*2;
+  var cols=opt.cols, scale=avail/cols.reduce(function(a,c){ return a+c.w; },0);
+  var W=cols.map(function(c){ return c.w*scale; });
+
+  var HDR=20, ROW=17, FS=8.2, HFS=8, PADX=5;
+  var titleH=58, footH=22;
+
+  /* paginate */
+  var pages=[], cursor=0, first=true;
+  while(cursor<opt.rows.length || first){
+    var top=PH-M-(first?titleH:0);
+    var space=top-M-footH-HDR;
+    var n=Math.max(1,Math.floor(space/ROW));
+    var slice=opt.rows.slice(cursor,cursor+n);
+    pages.push({rows:slice,first:first,top:top});
+    cursor+=slice.length;
+    first=false;
+    if(cursor>=opt.rows.length) break;
+  }
+  /* room for the totals row on the last page? */
+  var lp=pages[pages.length-1];
+  if(lp.top-HDR-lp.rows.length*ROW-ROW < M+footH){
+    pages.push({rows:[],first:false,top:PH-M});
+    lp=pages[pages.length-1];
+  }
+  lp.totals=true;
+
+  var streams=pages.map(function(pg,pi){
+    var s=[], y=pg.top;
+    function txt(str,x,yy,size,bold,rgb){
+      s.push("BT /"+(bold?"F2":"F1")+" "+size+" Tf "+
+        (rgb||"0 0 0")+" rg 1 0 0 1 "+x.toFixed(2)+" "+yy.toFixed(2)+" Tm ("+pdfStr(str)+") Tj ET");
+    }
+    function rect(x,yy,w,h,rgb){ s.push(rgb+" rg "+x.toFixed(2)+" "+yy.toFixed(2)+" "+w.toFixed(2)+" "+h.toFixed(2)+" re f"); }
+    function line(x1,y1,x2,y2,rgb,lw){
+      s.push((rgb||".72 .75 .78")+" RG "+(lw||.5)+" w "+x1.toFixed(2)+" "+y1.toFixed(2)+" m "+
+        x2.toFixed(2)+" "+y2.toFixed(2)+" l S");
+    }
+    function cellText(str,ci,yy,size,bold,rgb){
+      if(str==="") return;
+      var x=M, i;
+      for(i=0;i<ci;i++) x+=W[i];
+      var w=W[ci], a=cols[ci].a, inner=w-PADX*2;
+      var t=fit(str,inner,size,bold), tw=textWidth(t,size,bold);
+      var tx = a==="r" ? x+w-PADX-tw : a==="c" ? x+(w-tw)/2 : x+PADX;
+      txt(t,tx,yy,size,bold,rgb);
+    }
+
+    if(pg.first){
+      txt(opt.title,M,PH-M-14,15,true,"0 0 0");
+      txt(opt.sub1,M,PH-M-30,8.4,false,".33 .36 .40");
+      txt(opt.sub2,M,PH-M-43,8.4,false,".33 .36 .40");
+      line(M,PH-M-51,PW-M,PH-M-51,".55 .58 .62",.8);
+    }
+
+    /* header band */
+    rect(M,y-HDR,avail,HDR,".93 .94 .96");
+    cols.forEach(function(c,i){ cellText(c.t,i,y-HDR+6.2,HFS,true,".16 .18 .22"); });
+    line(M,y-HDR,PW-M,y-HDR,".45 .48 .52",.8);
+    line(M,y,PW-M,y,".45 .48 .52",.8);
+    y-=HDR;
+
+    var startY=y;
+    pg.rows.forEach(function(r,ri){
+      if(ri%2===1) rect(M,y-ROW,avail,ROW,".975 .977 .982");
+      r.forEach(function(v,ci){
+        if(v==="") return;
+        var c=cols[ci];
+        var show = c.a==="r" ? money(+v) : v;
+        var rgb = c.cls==="cin" ? ".05 .45 .28" : c.cls==="cout" ? ".62 .12 .09" : ".12 .14 .17";
+        cellText(show,ci,y-ROW+5.4,FS,false,rgb);
+      });
+      y-=ROW;
+      line(M,y,PW-M,y,".80 .83 .86",.4);
+    });
+
+    if(pg.totals){
+      rect(M,y-ROW,avail,ROW,".90 .89 .98");
+      opt.totals.forEach(function(v,ci){
+        if(v==="") return;
+        var c=cols[ci];
+        var show=c.a==="r"?money(+v):v;
+        cellText(show,ci,y-ROW+5.4,FS+.3,true,".10 .10 .18");
+      });
+      y-=ROW;
+      line(M,y,PW-M,y,".45 .48 .52",.8);
+    }
+
+    /* column separators, full height of the block */
+    var x=M;
+    line(x,startY,x,y,".55 .58 .62",.5);
+    cols.forEach(function(c,i){ x+=W[i]; line(x,startY+HDR,x,y,".55 .58 .62",.5); });
+
+    txt(opt.foot,M,M-2,7.4,false,".45 .48 .52");
+    var pn="Page "+(pi+1)+" of "+pages.length;
+    txt(pn,PW-M-textWidth(pn,7.4,false),M-2,7.4,false,".45 .48 .52");
+
+    return s.join("\n");
+  });
+
+  /* assemble the file */
+  var objs=[], nPages=pages.length;
+  var kids=[];
+  for(var i=0;i<nPages;i++) kids.push((4+i*2)+" 0 R");
+  objs[1]="<< /Type /Catalog /Pages 2 0 R >>";
+  objs[2]="<< /Type /Pages /Count "+nPages+" /Kids ["+kids.join(" ")+"] >>";
+  objs[3]="<< /Font << /F1 "+(4+nPages*2)+" 0 R /F2 "+(5+nPages*2)+" 0 R >> >>";
+  for(i=0;i<nPages;i++){
+    objs[4+i*2]="<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+PW+" "+PH+
+      "] /Resources 3 0 R /Contents "+(5+i*2)+" 0 R >>";
+    objs[5+i*2]="<< /Length "+streams[i].length+" >>\nstream\n"+streams[i]+"\nendstream";
+  }
+  objs[4+nPages*2]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
+  objs[5+nPages*2]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
+
+  var out="%PDF-1.4\n", offsets=[];
+  for(i=1;i<objs.length;i++){
+    offsets[i]=out.length;
+    out+=i+" 0 obj\n"+objs[i]+"\nendobj\n";
+  }
+  var xref=out.length, count=objs.length;
+  out+="xref\n0 "+count+"\n0000000000 65535 f \n";
+  for(i=1;i<count;i++) out+=("0000000000"+offsets[i]).slice(-10)+" 00000 n \n";
+  out+="trailer\n<< /Size "+count+" /Root 1 0 R >>\nstartxref\n"+xref+"\n%%EOF";
+
+  var bytes=new Uint8Array(out.length);
+  for(i=0;i<out.length;i++) bytes[i]=out.charCodeAt(i)&0xFF;
+  return new Blob([bytes],{type:"application/pdf"});
+}
+
+el("btnRepPdf").addEventListener("click",function(){
+  if(!lastTable){ toast("Nothing to export"); return; }
+  var f=readFilters(), T=lastTable;
+  var tin=0,tout=0;
+  filtered().forEach(function(t){ if(t.type==="in") tin+=+t.amount; else tout+=+t.amount; });
+  var blob=buildPdf({
+    title:"Cashbook \u2014 "+RTYPE_NAMES[repType],
+    sub1:"Period: "+periodText()+
+         "     Entry type: "+(f.type==="all"?"All":(f.type==="in"?"Cash in":"Cash out"))+
+         "     Head: "+(f.head==="all"?"All":f.head)+
+         "     Mode: "+(f.mode==="all"?"Cash & bank":(f.mode==="cash"?"Cash":"Bank"))+
+         (f.q?"     Search: "+el("fSearch").value.trim():""),
+    sub2:"Total in "+money(tin)+"     Total out "+money(tout)+"     Net "+money(tin-tout),
+    cols:T.cols, rows:T.rows, totals:T.totals,
+    foot:"Generated "+shortDate(new Date())+" "+timeLabel(new Date())
+  });
+  deliver(blob,"cashbook-"+repType+"-"+ymd(new Date())+".pdf","Cashbook report").then(function(r){
+    if(r==="cancelled") return;
+    toast(r==="shared" ? "Choose where to open it"
+                       : "PDF saved to Downloads", 3000);
+    if(pdfLostChars) setTimeout(function(){
+      toast("Some non-English text couldn't be drawn in the PDF \u2014 use Excel export for that",5000);
+    },3200);
+  });
+});
+
+/* ================= import: readers ================= */
+function u16(b,o){ return b[o]|(b[o+1]<<8); }
+function u32(b,o){ return (b[o]|(b[o+1]<<8)|(b[o+2]<<16)|(b[o+3]<<24))>>>0; }
+async function inflateRaw(bytes){
+  if(typeof DecompressionStream==="undefined") throw new Error("nodeflate");
+  var s=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function unzip(buf){
+  var eocd=-1;
+  for(var i=buf.length-22;i>=0&&i>buf.length-66000;i--){
+    if(u32(buf,i)===0x06054b50){ eocd=i; break; }
+  }
+  if(eocd<0) throw new Error("notzip");
+  var count=u16(buf,eocd+10), dir=u32(buf,eocd+16), out={}, p=dir;
+  for(var n=0;n<count;n++){
+    if(u32(buf,p)!==0x02014b50) break;
+    var method=u16(buf,p+10), csize=u32(buf,p+20);
+    var fnLen=u16(buf,p+28), exLen=u16(buf,p+30), cmLen=u16(buf,p+32);
+    var lho=u32(buf,p+42);
+    var name=new TextDecoder().decode(buf.subarray(p+46,p+46+fnLen));
+    var lfn=u16(buf,lho+26), lex=u16(buf,lho+28), start=lho+30+lfn+lex;
+    out[name]={method:method,raw:buf.subarray(start,start+csize)};
+    p+=46+fnLen+exLen+cmLen;
+  }
+  return out;
+}
+async function zipText(entries,name){
+  var e=entries[name];
   if(!e) return null;
-  var bytes = e.method===0 ? e.raw : await inflateRaw(e.raw);
+  var bytes=e.method===0?e.raw:await inflateRaw(e.raw);
   return new TextDecoder().decode(bytes);
 }
-
 function colIndex(ref){
-  var m = /^([A-Z]+)/.exec(ref||"");
+  var m=/^([A-Z]+)/.exec(ref||"");
   if(!m) return -1;
-  var n=0, s=m[1];
-  for(var i=0;i<s.length;i++) n = n*26 + (s.charCodeAt(i)-64);
+  var n=0,s=m[1];
+  for(var i=0;i<s.length;i++) n=n*26+(s.charCodeAt(i)-64);
   return n-1;
 }
-
 async function readXlsx(file){
-  var entries = await unzip(new Uint8Array(await file.arrayBuffer()));
-
-  /* shared strings table */
-  var shared = [], ssXml = await zipText(entries,"xl/sharedStrings.xml");
+  var entries=await unzip(new Uint8Array(await file.arrayBuffer()));
+  var shared=[], ssXml=await zipText(entries,"xl/sharedStrings.xml");
   if(ssXml){
-    var sd = new DOMParser().parseFromString(ssXml,"application/xml");
-    var sis = sd.getElementsByTagName("si");
+    var sd=new DOMParser().parseFromString(ssXml,"application/xml");
+    var sis=sd.getElementsByTagName("si");
     for(var i=0;i<sis.length;i++){
-      var ts = sis[i].getElementsByTagName("t"), s="";
-      for(var j=0;j<ts.length;j++) s += ts[j].textContent;
+      var ts=sis[i].getElementsByTagName("t"), s="";
+      for(var j=0;j<ts.length;j++) s+=ts[j].textContent;
       shared.push(s);
     }
   }
-
-  /* first worksheet */
-  var sheetName = null;
-  for(var k in entries){ if(/^xl\/worksheets\/sheet\d+\.xml$/.test(k)){ sheetName = sheetName && sheetName < k ? sheetName : k; } }
+  var sheetName=null;
+  for(var k in entries){
+    if(/^xl\/worksheets\/sheet\d+\.xml$/.test(k)) sheetName=(sheetName&&sheetName<k)?sheetName:k;
+  }
   if(!sheetName) throw new Error("nosheet");
-  var xml = await zipText(entries, sheetName);
-  var doc = new DOMParser().parseFromString(xml,"application/xml");
-
-  var rowsEl = doc.getElementsByTagName("row"), rows=[];
+  var doc=new DOMParser().parseFromString(await zipText(entries,sheetName),"application/xml");
+  var rowsEl=doc.getElementsByTagName("row"), rows=[];
   for(var r=0;r<rowsEl.length;r++){
-    var cells = rowsEl[r].getElementsByTagName("c"), arr=[];
+    var cells=rowsEl[r].getElementsByTagName("c"), arr=[];
     for(var c=0;c<cells.length;c++){
-      var cell=cells[c], t=cell.getAttribute("t"), idx=colIndex(cell.getAttribute("r"));
-      var v="";
+      var cell=cells[c], t=cell.getAttribute("t"), idx=colIndex(cell.getAttribute("r")), v="";
       if(t==="inlineStr"){
         var its=cell.getElementsByTagName("t");
-        for(var q=0;q<its.length;q++) v+=its[q].textContent;
+        for(var qi=0;qi<its.length;qi++) v+=its[qi].textContent;
       } else {
         var vs=cell.getElementsByTagName("v");
-        v = vs.length ? vs[0].textContent : "";
-        if(t==="s") v = shared[+v] != null ? shared[+v] : "";
+        v=vs.length?vs[0].textContent:"";
+        if(t==="s") v=shared[+v]!=null?shared[+v]:"";
       }
       if(idx<0) idx=arr.length;
       arr[idx]=v;
@@ -1100,78 +1448,73 @@ async function readXlsx(file){
   }
   return rows;
 }
-
 function parseCsv(text){
   if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
-  var rows=[], row=[], cell="", q=false;
+  var rows=[],row=[],cell="",qm=false;
   for(var i=0;i<text.length;i++){
     var ch=text[i];
-    if(q){
-      if(ch==='"'){ if(text[i+1]==='"'){ cell+='"'; i++; } else q=false; }
+    if(qm){
+      if(ch==='"'){ if(text[i+1]==='"'){ cell+='"'; i++; } else qm=false; }
       else cell+=ch;
-    } else if(ch==='"') q=true;
+    } else if(ch==='"') qm=true;
     else if(ch===","){ row.push(cell); cell=""; }
     else if(ch==="\n"){ row.push(cell); rows.push(row); row=[]; cell=""; }
     else if(ch!=="\r") cell+=ch;
   }
-  if(cell!=="" || row.length){ row.push(cell); rows.push(row); }
+  if(cell!==""||row.length){ row.push(cell); rows.push(row); }
   return rows;
 }
 
 /* ================= import: value parsing ================= */
 function impNumber(v){
   if(v==null) return NaN;
-  var raw = String(v).trim();
+  var raw=String(v).trim();
   if(raw==="") return NaN;
-  var neg = /^\(.*\)$/.test(raw) || /^\s*-/.test(raw);
-  /* drop thousands separators, then take the first real number.
-     matching beats stripping: "Rs. 4,500" must not become 0.45 */
-  var m = /(\d+(?:\.\d+)?)/.exec(raw.replace(/[,\s]/g,""));
+  var neg=/^\(.*\)$/.test(raw)||/^\s*-/.test(raw);
+  var m=/(\d+(?:\.\d+)?)/.exec(raw.replace(/[,\s]/g,""));
   if(!m) return NaN;
-  var n = parseFloat(m[1]);
+  var n=parseFloat(m[1]);
   if(!isFinite(n)) return NaN;
-  return neg ? -n : n;
+  return neg?-n:n;
 }
 function serialToDate(n){
-  var ms = Math.round((n-25569)*86400000);
-  var d = new Date(ms);
-  return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),
-                  d.getUTCHours(),d.getUTCMinutes());
+  var d=new Date(Math.round((n-25569)*86400000));
+  return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),d.getUTCHours(),d.getUTCMinutes());
 }
 function impDate(v,dayFirst){
   if(v==null||v==="") return null;
-  var s = String(v).trim();
+  var s=String(v).trim();
   if(/^\d+(\.\d+)?$/.test(s)){
     var n=+s;
-    if(n>20000 && n<80000) return serialToDate(n);
+    if(n>20000&&n<80000) return serialToDate(n);
   }
-  var m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
+  var m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
   if(m) return new Date(+m[1],+m[2]-1,+m[3]);
-  m = /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/.exec(s);
+  m=/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/.exec(s);
   if(m){
     var a=+m[1], b=+m[2], y=+m[3];
-    if(y<100) y += y<70 ? 2000 : 1900;
-    var day = dayFirst ? a : b, mon = dayFirst ? b : a;
-    if(mon>12 && day<=12){ var sw=day; day=mon; mon=sw; }
+    if(y<100) y+=y<70?2000:1900;
+    var day=dayFirst?a:b, mon=dayFirst?b:a;
+    if(mon>12&&day<=12){ var sw=day; day=mon; mon=sw; }
     return new Date(y,mon-1,day);
   }
-  m = /^(\d{1,2})[\-\s]([A-Za-z]{3,})[\-\s](\d{2,4})/.exec(s);
+  m=/^(\d{1,2})[\-\s]([A-Za-z]{3,})[\-\s](\d{2,4})/.exec(s);
   if(m){
-    var mi = MONS.indexOf(m[2].slice(0,3).charAt(0).toUpperCase()+m[2].slice(1,3).toLowerCase());
-    var yy = +m[3]; if(yy<100) yy += yy<70?2000:1900;
+    var mi=MONS.indexOf(m[2].charAt(0).toUpperCase()+m[2].slice(1,3).toLowerCase());
+    var yy=+m[3]; if(yy<100) yy+=yy<70?2000:1900;
     if(mi>=0) return new Date(yy,mi,+m[1]);
   }
-  var d2 = new Date(s);
-  return isNaN(d2.getTime()) ? null : d2;
+  var d2=new Date(s);
+  return isNaN(d2.getTime())?null:d2;
 }
 function impMode(v,def){
-  var s = String(v==null?"":v).toLowerCase();
+  var s=String(v==null?"":v).toLowerCase();
   if(/bank|cheque|check|online|transfer|ibft|card/.test(s)) return "bank";
   if(/cash/.test(s)) return "cash";
   return def;
 }
 function impType(v){
-  var s = String(v==null?"":v).toLowerCase();
+  var s=String(v==null?"":v).toLowerCase();
   if(/out|debit|\bdr\b|payment|paid|expense|withdraw/.test(s)) return "out";
   if(/in\b|credit|\bcr\b|receipt|received|income|deposit/.test(s)) return "in";
   return null;
@@ -1179,90 +1522,80 @@ function impType(v){
 
 /* ================= import: UI ================= */
 var impRows=null, impHeaders=[], impName="";
-
 el("btnImport").addEventListener("click",function(){ el("impFile").click(); });
-
 el("impFile").addEventListener("change",function(){
-  var file=this.files && this.files[0];
+  var file=this.files&&this.files[0];
   this.value="";
   if(!file) return;
   toast("Reading file\u2026");
   var isX=/\.xlsx$/i.test(file.name);
-  (isX ? readXlsx(file)
-       : file.text().then(parseCsv)
-  ).then(function(rows){
-    rows = rows.filter(function(r){
+  (isX?readXlsx(file):file.text().then(parseCsv)).then(function(rows){
+    rows=rows.filter(function(r){
       return r.some(function(c){ return String(c==null?"":c).trim()!==""; });
     });
     if(rows.length<2) throw new Error("empty");
-    impName=file.name; impRows=rows.slice(1); impHeaders=rows[0].map(function(h,i){
+    impName=file.name;
+    impRows=rows.slice(1);
+    impHeaders=rows[0].map(function(h,i){
       var s=String(h==null?"":h).trim();
-      return s || ("Column "+(i+1));
+      return s||("Column "+(i+1));
     });
     openImport();
   }).catch(function(e){
-    var msg = e && e.message==="nodeflate"
-        ? "This browser can't open .xlsx files. Save the sheet as CSV in Excel and try again."
-      : e && e.message==="empty"
-        ? "That file has no rows under its headings."
+    alert(e&&e.message==="nodeflate"
+      ? "This browser can't open .xlsx files. Save the sheet as CSV in Excel and try again."
+      : e&&e.message==="empty"
+      ? "That file has no rows under its headings."
       : /\.xlsx$/i.test(file.name)
-        ? "Couldn't read that .xlsx. If it's an older .xls, open it in Excel and save as .xlsx or CSV."
-        : "Couldn't read that file.";
-    alert(msg);
+      ? "Couldn't read that .xlsx. If it's an older .xls, open it in Excel and save as .xlsx or CSV."
+      : "Couldn't read that file.");
   });
 });
-
-function fillMapSelect(sel, guess, allowNone){
-  var h = (allowNone ? '<option value="-1">\u2014 none \u2014</option>' : "");
+function fillMapSelect(sel,guess,allowNone){
+  var h=(allowNone?'<option value="-1">\u2014 none \u2014</option>':"");
   impHeaders.forEach(function(name,i){ h+='<option value="'+i+'">'+esc(name)+'</option>'; });
   sel.innerHTML=h;
   var found=-1;
-  impHeaders.forEach(function(name,i){ if(found<0 && guess.test(name)) found=i; });
-  sel.value = found>=0 ? String(found) : (allowNone ? "-1" : "0");
+  impHeaders.forEach(function(name,i){ if(found<0&&guess.test(name)) found=i; });
+  sel.value=found>=0?String(found):(allowNone?"-1":"0");
 }
-
 function openImport(){
-  el("impFileInfo").textContent =
-    impName+" \u00B7 "+impRows.length+" rows \u00B7 "+impHeaders.length+" columns. "+
-    "Match your columns to the fields below \u2014 the app has guessed, so check each one.";
-  fillMapSelect(el("mDate"), /date|tarikh/i, false);
-  fillMapSelect(el("mIn"),   /cash\s*in|credit|receipt|income|inflow|debit/i, true);
-  fillMapSelect(el("mOut"),  /cash\s*out|payment|expense|paid|outflow|credit/i, true);
-  fillMapSelect(el("mAmt"),  /amount|amt|value|rupee|total/i, true);
-  fillMapSelect(el("mType"), /type|dr|cr|in.?out/i, true);
-  fillMapSelect(el("mHead"), /head|categor|account|particular|nature|purpose/i, true);
-  fillMapSelect(el("mDetail"), /detail|descrip|narration|remark|note|particular/i, true);
-  fillMapSelect(el("mMode"), /mode|method|bank|payment|through/i, true);
+  el("impFileInfo").textContent=impName+" \u00B7 "+impRows.length+" rows \u00B7 "+
+    impHeaders.length+" columns. Match your columns to the fields below \u2014 the app has guessed, so check each one.";
+  fillMapSelect(el("mDate"),/date|tarikh/i,false);
+  fillMapSelect(el("mIn"),/cash\s*in|credit|receipt|income|inflow|debit/i,true);
+  fillMapSelect(el("mOut"),/cash\s*out|payment|expense|paid|outflow|credit/i,true);
+  fillMapSelect(el("mAmt"),/amount|amt|value|rupee|total/i,true);
+  fillMapSelect(el("mType"),/type|dr|cr|in.?out/i,true);
+  fillMapSelect(el("mHead"),/head|categor|account|particular|nature|purpose/i,true);
+  fillMapSelect(el("mDetail"),/detail|descrip|narration|remark|note|particular/i,true);
+  fillMapSelect(el("mMode"),/mode|method|bank|payment|through/i,true);
   updateImpLayout();
   show("impSheet");
 }
-
 function updateImpLayout(){
-  var split = el("mLayout").value==="split";
-  el("wrapIn").style.display   = split ? "" : "none";
-  el("wrapOut").style.display  = split ? "" : "none";
-  el("wrapAmt").style.display  = split ? "none" : "";
-  el("wrapType").style.display = split ? "none" : "";
+  var split=el("mLayout").value==="split";
+  el("wrapIn").style.display=split?"":"none";
+  el("wrapOut").style.display=split?"":"none";
+  el("wrapAmt").style.display=split?"none":"";
+  el("wrapType").style.display=split?"none":"";
   previewImport();
 }
 el("mLayout").addEventListener("change",updateImpLayout);
 Array.prototype.forEach.call(document.querySelectorAll(".map, #mDayFirst, #mDefMode"),function(s){
   s.addEventListener("change",previewImport);
 });
-
 function buildImport(){
-  var split   = el("mLayout").value==="split";
-  var dayFirst= el("mDayFirst").value==="1";
-  var defMode = el("mDefMode").value;
+  var split=el("mLayout").value==="split";
+  var dayFirst=el("mDayFirst").value==="1";
+  var defMode=el("mDefMode").value;
   var cD=+el("mDate").value, cI=+el("mIn").value, cO=+el("mOut").value;
   var cA=+el("mAmt").value, cT=+el("mType").value;
   var cH=+el("mHead").value, cX=+el("mDetail").value, cM=+el("mMode").value;
-  var get=function(r,i){ return i>=0 && r[i]!=null ? r[i] : ""; };
-
+  var get=function(r,i){ return i>=0&&r[i]!=null?r[i]:""; };
   var ok=[], skipped=0;
   impRows.forEach(function(r){
-    var d = impDate(get(r,cD), dayFirst);
-    var type=null, amt=NaN;
+    var d=impDate(get(r,cD),dayFirst), type=null, amt=NaN;
     if(split){
       var vi=impNumber(get(r,cI)), vo=impNumber(get(r,cO));
       if(isFinite(vi)&&vi>0){ type="in"; amt=vi; }
@@ -1270,24 +1603,17 @@ function buildImport(){
     } else {
       var v=impNumber(get(r,cA));
       if(isFinite(v)&&v!==0){
-        type = impType(get(r,cT)) || (v<0 ? "out" : "in");
-        amt = Math.abs(v);
+        type=impType(get(r,cT))||(v<0?"out":"in");
+        amt=Math.abs(v);
       }
     }
-    if(!d || !type || !isFinite(amt) || amt<=0){ skipped++; return; }
-    ok.push({
-      id: uid(),
-      ts: d.toISOString(),
-      type: type,
-      amount: Math.round(amt*100)/100,
-      head: String(get(r,cH)).trim(),
-      detail: String(get(r,cX)).trim(),
-      account: impMode(get(r,cM), defMode)
-    });
+    if(!d||!type||!isFinite(amt)||amt<=0){ skipped++; return; }
+    ok.push({ id:uid(), ts:d.toISOString(), type:type, amount:Math.round(amt*100)/100,
+      head:String(get(r,cH)).trim(), detail:String(get(r,cX)).trim(),
+      account:impMode(get(r,cM),defMode) });
   });
   return { rows:ok, skipped:skipped };
 }
-
 function previewImport(){
   if(!impRows) return;
   var res=buildImport(), ti=0, to=0;
@@ -1300,22 +1626,21 @@ function previewImport(){
     return;
   }
   el("btnImpGo").disabled=false;
-  var d0=new Date(res.rows[0].ts), dn=new Date(res.rows[res.rows.length-1].ts);
   var span=res.rows.map(function(t){ return t.ts; }).sort();
   p.innerHTML='<b>'+res.rows.length+' entries ready</b>'+
-    (res.skipped ? ' \u00B7 '+res.skipped+' rows skipped' : '')+'<br>'+
+    (res.skipped?' \u00B7 '+res.skipped+' rows skipped':'')+'<br>'+
     'In '+money(ti)+' \u00B7 Out '+money(to)+' \u00B7 Net '+money(ti-to)+'<br>'+
     shortDate(new Date(span[0]))+' to '+shortDate(new Date(span[span.length-1]))+
     '<br>These are added to what you already have \u2014 nothing is replaced.';
 }
-
 el("btnImpCancel").addEventListener("click",function(){ impRows=null; hide(); });
 el("btnImpGo").addEventListener("click",function(){
   var res=buildImport();
   if(!res.rows.length) return;
   if(!confirm("Add "+res.rows.length+" entries to your cashbook?")) return;
-  state.txns = state.txns.concat(res.rows);
-  persist(); render(); if(curView==="reports"){ syncHeadOptions(); renderReport(); }
+  state.txns=state.txns.concat(res.rows);
+  persist(); render();
+  if(curView==="reports"){ syncHeadOptions(); renderReport(); }
   impRows=null; hide();
   toast(res.rows.length+" entries imported");
 });

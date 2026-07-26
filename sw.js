@@ -1,5 +1,5 @@
 /* Cashbook offline cache */
-var CACHE = "cashbook-v3";
+var CACHE = "cashbook-v4";
 var ASSETS = [
   "./",
   "./index.html",
