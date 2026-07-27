@@ -321,13 +321,78 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
 .note{font-size:12.5px;color:var(--dim);line-height:1.55;margin:2px 0 18px}
 .setrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
+/* ============ quick repeat ============ */
+.qstrip{display:flex;gap:9px;overflow-x:auto;padding:2px 2px 4px;
+  scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
+.qstrip::-webkit-scrollbar{display:none}
+.qchip{flex:0 0 auto;min-width:118px;max-width:180px;text-align:left;cursor:pointer;
+  background:var(--white);border:1px solid var(--line);border-radius:14px;
+  padding:11px 13px;box-shadow:var(--shadow);color:inherit;
+  animation:rise .3s cubic-bezier(.22,.8,.3,1) both}
+.qchip:active{transform:scale(.96);background:var(--g-50)}
+.q-top{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.q-head{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-amt{display:block;font-size:16px;font-weight:800;line-height:1.15}
+.q-amt.in{color:var(--g)}
+.q-amt.out{color:var(--red)}
+.q-sub{display:block;font-size:10.5px;color:var(--faint);font-weight:600;margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-hint{font-size:11px;color:var(--faint);padding:0 2px 8px;line-height:1.4}
+
+.monthstrip{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+.ms{border:1px solid var(--line);border-radius:13px;padding:10px 12px;background:var(--white);
+  box-shadow:var(--shadow)}
+.ms-l{display:block;font-size:9.5px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:3px}
+.ms-v{font-size:16px;font-weight:800}
+.ms-v.in{color:var(--g)}
+.ms-v.out{color:var(--red)}
+
+.actions{display:grid;grid-template-columns:1fr auto 1fr;gap:9px;
+  padding:12px 16px calc(12px + var(--sb));
+  background:linear-gradient(to top,#fff 60%,rgba(255,255,255,0))}
+.act.xfer{display:flex;align-items:center;justify-content:center;
+  background:var(--white);border:1px solid var(--line2);color:var(--g-dark);
+  padding:12px 14px;box-shadow:var(--shadow)}
+.act.xfer svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+
 .toast{position:fixed;left:50%;bottom:calc(100px + var(--sb));transform:translate(-50%,10px);
   background:#17252C;color:#fff;font-size:13.5px;font-weight:500;padding:11px 17px;
   border-radius:11px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
-  z-index:40;max-width:88vw;text-align:center}
-.toast.show{opacity:1;transform:translate(-50%,0)}
+  z-index:40;max-width:88vw;text-align:center;display:flex;align-items:center;gap:14px}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{background:none;border:0;color:#5FE0A0;font-size:12.5px;font-weight:800;
+  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;padding:2px 0;white-space:nowrap}
 
-@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important}}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important;animation-duration:.01ms !important}}
+
+/* ============ motion ============ */
+@keyframes viewR{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@keyframes viewL{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+.view.active.from-right{animation:viewR .3s cubic-bezier(.22,.8,.3,1)}
+.view.active.from-left{animation:viewL .3s cubic-bezier(.22,.8,.3,1)}
+
+@keyframes rise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.daygroup{animation:rise .34s cubic-bezier(.22,.8,.3,1) both}
+.rtype,.tot-card,.modecard,.opt{animation:rise .28s cubic-bezier(.22,.8,.3,1) both}
+
+@keyframes pop{0%{transform:scale(.94);opacity:0}60%{transform:scale(1.02)}100%{transform:scale(1);opacity:1}}
+.hs{animation:pop .32s cubic-bezier(.22,.9,.3,1) both}
+
+@keyframes flash{0%{background:var(--g-100)}100%{background:transparent}}
+.row.justadded{animation:flash 1.5s ease-out}
+
+.row,.fc-cell,.rtype,.opt,.chip,.modebtn,.tab,.hr-b,.mrow{transition:background .16s,border-color .16s,color .16s,transform .12s}
+.row:active,.fc-cell:active,.opt:active{transform:scale(.988)}
+.btn,.act,.hbtn,.txt-btn{transition:transform .12s cubic-bezier(.2,.8,.3,1),box-shadow .16s,opacity .16s}
+.btn:active,.hbtn:active,.txt-btn:active{transform:scale(.97)}
+.hs-v,.hero-total,.tot-v{transition:color .2s}
+.clearx{transition:opacity .16s}
+#panelCat,#panelMode{animation:rise .24s ease-out both}
+.modegrid .modebtn[aria-pressed="true"]{transform:scale(1.02)}
+.radio::after{animation:pop .2s ease-out}
+.sheet-body{scroll-behavior:smooth}
 </style>
 </head>
 <body>
@@ -354,6 +419,13 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
     <div class="hero-split" id="modeCards"></div>
   </div>
 
+  <div style="padding:0 16px">
+    <div class="monthstrip">
+      <div class="ms"><span class="ms-l" id="msLabel">This month in</span><span class="ms-v in num" id="msIn">0</span></div>
+      <div class="ms"><span class="ms-l">This month out</span><span class="ms-v out num" id="msOut">0</span></div>
+    </div>
+  </div>
+
   <div class="searchwrap">
     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
     <input id="homeSearch" type="search" placeholder="Search remark or category…" autocomplete="off">
@@ -361,6 +433,7 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
   </div>
 
   <div id="scroll">
+    <div id="quickWrap"></div>
     <div class="sec-head" id="listHead">Recent entries</div>
     <div id="list"></div>
   </div>
@@ -370,6 +443,9 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
       <span class="act-ico">&minus;</span>
       <span class="act-main">Cash Out</span>
       <span class="act-sub">money paid</span>
+    </button>
+    <button class="act xfer" id="btnXfer" aria-label="Transfer between accounts" title="Transfer between accounts">
+      <svg viewBox="0 0 24 24"><path d="M7 4v13M7 17l-3-3M7 17l3-3M17 20V7M17 7l-3 3M17 7l3 3"/></svg>
     </button>
     <button class="act in" id="btnIn">
       <span class="act-ico">+</span>
@@ -407,7 +483,11 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
         </button>
         <button class="fc-cell" data-f="mode">
           <span class="fc-l"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 11h20"/></svg>Payment mode</span>
-          <span class="fc-v" id="sumMode">Cash &amp; bank</span>
+          <span class="fc-v" id="sumMode">All modes</span>
+        </button>
+        <button class="fc-cell" data-f="xfer">
+          <span class="fc-l"><svg viewBox="0 0 24 24"><path d="M7 5v13M7 18l-3-3M17 19V6M17 6l3 3"/></svg>Transfers</span>
+          <span class="fc-v" id="sumXfer">Included</span>
         </button>
       </div>
     </div>
@@ -482,6 +562,27 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
   </div>
 </div>
 
+<!-- transfer sheet -->
+<div class="sheet" id="xferSheet" role="dialog" aria-modal="true" aria-labelledby="xferTitle">
+  <div class="sheet-top"><div class="grab"></div><h1 class="sheet-title" id="xferTitle">Transfer between accounts</h1></div>
+  <div class="sheet-body">
+    <p class="note">Moving your own money — bank to cash, cash to NayaPay. This records both sides at once, so your total balance doesn't change.</p>
+    <label class="f"><span class="f-label">Date &amp; time</span>
+      <input class="f-in" type="datetime-local" id="xDate"></label>
+    <label class="f"><span class="f-label">Amount</span>
+      <input class="f-in amount-in num" type="text" inputmode="decimal" id="xAmount" placeholder="0" autocomplete="off"></label>
+    <div class="err" id="xErr"></div>
+    <div class="f"><span class="f-label">From</span><div class="modegrid" id="xFrom"></div></div>
+    <div class="f"><span class="f-label">To</span><div class="modegrid" id="xTo"></div></div>
+    <label class="f"><span class="f-label">Remark</span>
+      <input class="f-in" type="text" id="xDetail" placeholder="Optional note" autocomplete="off"></label>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" id="btnXferCancel">Cancel</button>
+    <button class="btn btn-save" id="btnXferGo">Transfer</button>
+  </div>
+</div>
+
 <!-- filter dialog -->
 <div class="sheet" id="pickSheet" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
   <div class="sheet-top"><div class="grab"></div><h1 class="sheet-title" id="pickTitle">Period</h1></div>
@@ -532,6 +633,10 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
     <button class="btn btn-ghost full" id="btnImport">Import from Excel or CSV</button>
     <input type="file" id="impFile" accept=".xlsx,.csv,.txt,text/csv" style="display:none">
     <button class="btn btn-ghost full" id="btnExport">Export everything (CSV)</button>
+    <p class="note"><b>Full backup</b> saves everything — entries, categories, payment modes and opening balances — as one file you can restore onto any phone. The CSV above is for Excel; this one is for putting the app back exactly as it was.</p>
+    <button class="btn btn-accent full" id="btnBackup">Save full backup</button>
+    <button class="btn btn-ghost full" id="btnRestore">Restore from backup</button>
+    <input type="file" id="restoreFile" accept=".json,application/json" style="display:none">
     <button class="btn btn-danger full" id="btnWipe">Erase everything</button>
     <p class="note" id="storeWarn" style="display:none;color:var(--red)"></p>
   </div>
@@ -672,6 +777,28 @@ function timeLabel(d){
   return hh+":"+pad(d.getMinutes())+" "+ap;
 }
 var el=function(id){ return document.getElementById(id); };
+var REDUCED=(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+/* count a figure up to its new value instead of snapping */
+function animNum(node,to){
+  var from=parseFloat(node.dataset.v);
+  node.dataset.v=to;
+  if(REDUCED||!isFinite(from)||from===to){ node.textContent=money(to); return; }
+  var t0=null, dur=520;
+  function step(t){
+    if(t0===null) t0=t;
+    var p=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-p,3);
+    node.textContent=money(from+(to-from)*e);
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+/* stagger children so a list arrives rather than appears */
+function stagger(container,sel,step){
+  if(REDUCED) return;
+  var n=container.querySelectorAll(sel);
+  for(var i=0;i<n.length&&i<14;i++) n[i].style.animationDelay=(i*(step||40))+"ms";
+}
 
 /* ================= core data ================= */
 function sorted(){
@@ -722,11 +849,24 @@ var homeQ="";
 
 function render(){
   var b=balances();
-  el("balTotal").textContent=money(b.total);
+  animNum(el("balTotal"),b.total);
   el("modeCards").innerHTML=state.modes.map(function(m){
+    var v=b.per[m.id]||0;
     return '<div class="hs"><span class="hs-l">'+esc(m.name)+'</span>'+
-      '<span class="hs-v num">'+money(b.per[m.id]||0)+'</span></div>';
+      '<span class="hs-v num'+(v<0?" neg":"")+'">'+money(v)+'</span></div>';
   }).join("");
+  stagger(el("modeCards"),".hs",50);
+
+  /* this month, so the headline balance has context */
+  var now=new Date(), mstart=new Date(now.getFullYear(),now.getMonth(),1), mi=0, mo=0;
+  state.txns.forEach(function(t){
+    if(t.xfer||new Date(t.ts)<mstart) return;
+    if(t.type==="in") mi+=+t.amount; else mo+=+t.amount;
+  });
+  el("msLabel").textContent=MONS[now.getMonth()]+" in";
+  el("msIn").textContent=money(mi);
+  el("msOut").textContent=money(mo);
+  renderQuick();
 
   var list=el("list"), all=sorted();
   var run=openingTotal("all"), runMap={};
@@ -784,7 +924,14 @@ function render(){
     html+='</div></div>';
   });
   list.innerHTML=html;
+  stagger(list,".daygroup",45);
+  if(lastAdded){
+    var r=list.querySelector('.row[data-id="'+lastAdded+'"]');
+    if(r) r.classList.add("justadded");
+    lastAdded=null;
+  }
 }
+var lastAdded=null;
 
 el("homeSearch").addEventListener("input",function(){
   homeQ=this.value.trim().toLowerCase();
@@ -795,10 +942,92 @@ el("clearSearch").addEventListener("click",function(){
   el("homeSearch").value=""; homeQ=""; this.classList.remove("on"); render();
 });
 
+/* ================= quick repeat =================
+   The commonest action in a cashbook is recording the same thing again.
+   First chip is always the last entry; the rest are whatever gets repeated most. */
+function sigOf(t){
+  return t.type+"|"+headOf(t).toLowerCase()+"|"+t.amount+"|"+t.account;
+}
+function quickRepeats(){
+  var rows=sorted().filter(function(t){ return !t.xfer; });
+  if(!rows.length) return [];
+  var counts={}, sample={};
+  rows.forEach(function(t){
+    var s=sigOf(t);
+    counts[s]=(counts[s]||0)+1;
+    sample[s]=t;                     /* keep the most recent wording */
+  });
+  var out=[], seen={};
+  var last=rows[rows.length-1];
+  out.push(last); seen[sigOf(last)]=1;
+
+  Object.keys(counts)
+    .filter(function(s){ return !seen[s]; })
+    .sort(function(a,b){
+      if(counts[b]!==counts[a]) return counts[b]-counts[a];
+      return sample[a].ts<sample[b].ts?1:-1;
+    })
+    .slice(0,4)
+    .forEach(function(s){ out.push(sample[s]); });
+
+  return out.map(function(t){
+    return { type:t.type, head:t.head, amount:t.amount,
+             account:t.account, detail:t.detail, n:counts[sigOf(t)] };
+  });
+}
+function renderQuick(){
+  var w=el("quickWrap");
+  if(homeQ){ w.innerHTML=""; return; }   /* noise while searching */
+  var q=quickRepeats();
+  if(!q.length){ w.innerHTML=""; return; }
+  quickList=q;
+  w.innerHTML='<div class="sec-head">Quick repeat</div>'+
+    '<div class="q-hint">One tap records it again with today\u2019s date. You can undo straight after.</div>'+
+    '<div class="qstrip">'+q.map(function(t,i){
+      return '<button class="qchip" data-q="'+i+'">'+
+        '<span class="q-top"><span class="dotm" style="background:'+modeColor(t.account)+'"></span>'+
+          '<span class="q-head">'+esc(t.head&&t.head.trim()?t.head:"Uncategorised")+'</span></span>'+
+        '<span class="q-amt num '+t.type+'">'+(t.type==="in"?"+":"\u2212")+money(t.amount)+'</span>'+
+        '<span class="q-sub">'+esc(modeName(t.account))+
+          (t.n>1?" \u00B7 used "+t.n+"\u00D7":"")+'</span>'+
+      '</button>';
+    }).join("")+'</div>';
+  stagger(w,".qchip",45);
+}
+var quickList=[];
+el("quickWrap").addEventListener("click",function(e){
+  var c=e.target.closest(".qchip"); if(!c) return;
+  var tpl=quickList[+c.dataset.q]; if(!tpl) return;
+  var rec={ id:uid(), ts:new Date().toISOString(), type:tpl.type,
+            amount:tpl.amount, head:tpl.head, detail:tpl.detail, account:tpl.account };
+  state.txns.push(rec); lastAdded=rec.id;
+  persist(); render(); if(curView==="reports") refreshReport();
+  try{ if(navigator.vibrate) navigator.vibrate(12); }catch(err){}
+  toast((tpl.type==="in"?"+":"\u2212")+money(tpl.amount)+" \u00B7 "+
+        (tpl.head||"Uncategorised"),4000,"Undo",function(){
+    state.txns=state.txns.filter(function(t){ return t.id!==rec.id; });
+    persist(); render(); if(curView==="reports") refreshReport();
+    toast("Removed");
+  });
+});
+
 /* ================= toast ================= */
 var toastTimer;
-function toast(msg,ms){
-  var t=el("toast"); t.textContent=msg; t.classList.add("show");
+function toast(msg,ms,actionLabel,onAction){
+  var t=el("toast");
+  t.innerHTML="";
+  t.appendChild(document.createTextNode(msg));
+  if(actionLabel){
+    var b=document.createElement("button");
+    b.textContent=actionLabel;
+    b.addEventListener("click",function(){
+      t.classList.remove("show");
+      clearTimeout(toastTimer);
+      onAction();
+    });
+    t.appendChild(b);
+  }
+  t.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer=setTimeout(function(){ t.classList.remove("show"); }, ms||2400);
 }
@@ -895,8 +1124,19 @@ el("list").addEventListener("click",function(e){
   var t=state.txns.filter(function(x){ return x.id===row.dataset.id; })[0];
   if(t) openEntry(t.type,t);
 });
+/* let the amount box do sums: "1200+300-50" is common when tallying receipts */
+function evalAmount(s){
+  var raw=String(s).replace(/[,\s\u00A0]/g,"");
+  if(/^[0-9.]+$/.test(raw)) return parseFloat(raw);
+  if(!/^[0-9.+\-*/()]+$/.test(raw)) return parseAmt(s);
+  try{
+    var v=Function('"use strict";return ('+raw+')')();
+    return (typeof v==="number"&&isFinite(v))?v:NaN;
+  }catch(e){ return NaN; }
+}
+
 el("btnSave").addEventListener("click",function(){
-  var amt=parseAmt(el("fAmount").value);
+  var amt=evalAmount(el("fAmount").value);
   if(!isFinite(amt)||amt<=0){
     el("fErr").textContent="Enter an amount greater than zero.";
     el("fAmount").focus(); return;
@@ -906,7 +1146,7 @@ el("btnSave").addEventListener("click",function(){
     type:curType, amount:Math.round(amt*100)/100,
     head:head, detail:el("fDetail").value.trim(), account:curAccount };
   if(editingId) state.txns=state.txns.map(function(t){ return t.id===editingId?rec:t; });
-  else state.txns.push(rec);
+  else { state.txns.push(rec); lastAdded=rec.id; }
   if(head && state.heads.map(function(h){ return h.toLowerCase(); }).indexOf(head.toLowerCase())<0)
     state.heads.push(head);
   persist(); render(); if(curView==="reports") refreshReport(); hide();
@@ -914,11 +1154,85 @@ el("btnSave").addEventListener("click",function(){
 });
 function doDelete(){
   if(!editingId) return;
-  if(!confirm("Delete this entry? This cannot be undone.")) return;
-  state.txns=state.txns.filter(function(t){ return t.id!==editingId; });
+  var target=state.txns.filter(function(t){ return t.id===editingId; })[0];
+  if(!target) return;
+  /* a transfer is two rows; removing one alone would corrupt the balances */
+  var group = target.xfer
+    ? state.txns.filter(function(t){ return t.xfer===target.xfer; })
+    : [target];
+  var word = group.length>1 ? "this transfer (both sides)" : "this entry";
+  if(!confirm("Delete "+word+"?")) return;
+  var ids={}; group.forEach(function(t){ ids[t.id]=1; });
+  var removed=group.slice();
+  state.txns=state.txns.filter(function(t){ return !ids[t.id]; });
   persist(); render(); if(curView==="reports") refreshReport(); hide();
-  toast("Entry deleted");
+  toast(group.length>1?"Transfer deleted":"Entry deleted",5000,"Undo",function(){
+    state.txns=state.txns.concat(removed);
+    persist(); render(); if(curView==="reports") refreshReport();
+    toast("Restored");
+  });
 }
+
+/* ================= transfers ================= */
+var xFrom=null, xTo=null;
+function renderXferSel(){
+  function grid(node,sel,other){
+    node.innerHTML=state.modes.map(function(m){
+      return '<button type="button" class="modebtn" data-m="'+esc(m.id)+'" '+
+        'aria-pressed="'+(m.id===sel?"true":"false")+'"'+
+        (m.id===other?' style="opacity:.45"':'')+'>'+
+        '<span class="dotm" style="background:'+modeColor(m.id)+'"></span>'+esc(m.name)+'</button>';
+    }).join("");
+  }
+  grid(el("xFrom"),xFrom,xTo);
+  grid(el("xTo"),xTo,xFrom);
+}
+el("xFrom").addEventListener("click",function(e){
+  var b=e.target.closest(".modebtn"); if(!b) return;
+  xFrom=b.dataset.m;
+  if(xTo===xFrom) xTo=null;
+  renderXferSel();
+});
+el("xTo").addEventListener("click",function(e){
+  var b=e.target.closest(".modebtn"); if(!b) return;
+  xTo=b.dataset.m;
+  if(xFrom===xTo) xFrom=null;
+  renderXferSel();
+});
+el("btnXfer").addEventListener("click",function(){
+  if(state.modes.length<2){
+    toast("Add a second payment mode first, under Heads management",3200); return;
+  }
+  xFrom=state.modes[0].id; xTo=state.modes[1].id;
+  el("xDate").value=toLocalInput(new Date());
+  el("xAmount").value=""; el("xDetail").value=""; el("xErr").textContent="";
+  renderXferSel(); show("xferSheet");
+  setTimeout(function(){ el("xAmount").focus(); },260);
+});
+el("btnXferCancel").addEventListener("click",hide);
+el("btnXferGo").addEventListener("click",function(){
+  var amt=evalAmount(el("xAmount").value);
+  if(!isFinite(amt)||amt<=0){
+    el("xErr").textContent="Enter an amount greater than zero.";
+    el("xAmount").focus(); return;
+  }
+  if(!xFrom||!xTo||xFrom===xTo){
+    el("xErr").textContent="Pick two different accounts."; return;
+  }
+  var ts=fromLocalInput(el("xDate").value).toISOString();
+  var note=el("xDetail").value.trim();
+  var label="Transfer: "+modeName(xFrom)+" \u2192 "+modeName(xTo);
+  var gid=uid();
+  var a={ id:uid(), ts:ts, type:"out", amount:Math.round(amt*100)/100, head:"Transfer",
+          detail:note||label, account:xFrom, xfer:gid };
+  var b={ id:uid(), ts:ts, type:"in",  amount:Math.round(amt*100)/100, head:"Transfer",
+          detail:note||label, account:xTo,   xfer:gid };
+  state.txns.push(a,b); lastAdded=b.id;
+  if(state.heads.map(function(h){ return h.toLowerCase(); }).indexOf("transfer")<0)
+    state.heads.push("Transfer");
+  persist(); render(); if(curView==="reports") refreshReport(); hide();
+  toast(money(amt)+" moved \u00B7 "+modeName(xFrom)+" to "+modeName(xTo),3000);
+});
 
 /* ================= settings ================= */
 el("btnSettings").addEventListener("click",function(){
@@ -1109,19 +1423,58 @@ el("btnExport").addEventListener("click",function(){
     .then(function(r){ if(r!=="cancelled") toast(r==="shared"?"Shared":"Saved to Downloads"); });
 });
 
+/* ================= backup & restore ================= */
+el("btnBackup").addEventListener("click",function(){
+  var payload={ app:"cashbook", version:1, savedAt:new Date().toISOString(), data:state };
+  var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  deliver(blob,"cashbook-backup-"+ymd(new Date())+".json","Cashbook full backup")
+    .then(function(r){
+      if(r!=="cancelled") toast(r==="shared"?"Backup shared":"Backup saved to Downloads",3000);
+    });
+});
+el("btnRestore").addEventListener("click",function(){ el("restoreFile").click(); });
+el("restoreFile").addEventListener("change",function(){
+  var f=this.files&&this.files[0];
+  this.value="";
+  if(!f) return;
+  f.text().then(function(txt){
+    var p=JSON.parse(txt);
+    var d=(p&&p.data)?p.data:p;
+    if(!d||!Array.isArray(d.txns)||!Array.isArray(d.modes)) throw new Error("shape");
+    if(!confirm("Restore "+d.txns.length+" entries and "+d.modes.length+
+       " payment modes?\n\nThis REPLACES everything currently in the app.")) return;
+    state=d;
+    if(!Array.isArray(state.heads)) state.heads=[];
+    state.modes.forEach(function(m){ m.opening=+m.opening||0; });
+    filters.head="all"; filters.mode="all";
+    persist(); render(); if(curView==="reports") refreshReport(); hide();
+    toast("Restored "+d.txns.length+" entries",3000);
+  }).catch(function(){
+    alert("That doesn't look like a Cashbook backup file. Pick the .json file created by \u201cSave full backup\u201d.");
+  });
+});
+
 /* ================= views ================= */
 var curView="home";
 function goto(v){
+  if(v===curView) return;
+  var dir=(v==="reports")?"from-right":"from-left";
   curView=v;
-  el("homeView").classList.toggle("active",v==="home");
-  el("reportsView").classList.toggle("active",v==="reports");
+  ["homeView","reportsView"].forEach(function(id){
+    var n=el(id);
+    n.classList.remove("from-right","from-left");
+    n.classList.toggle("active",(id==="homeView")===(v==="home"));
+  });
+  var inc=el(v==="home"?"homeView":"reportsView");
+  void inc.offsetWidth;           /* restart the animation */
+  inc.classList.add(dir);
   if(v==="reports") refreshReport();
 }
 el("btnReports").addEventListener("click",function(){ goto("reports"); });
 el("btnBack").addEventListener("click",function(){ goto("home"); });
 
 /* ================= filters ================= */
-var filters={ preset:"all", from:"", to:"", type:"all", head:"all", mode:"all" };
+var filters={ preset:"all", from:"", to:"", type:"all", head:"all", mode:"all", xfer:"in" };
 var repType="entries";
 var RTYPE_NAMES={entries:"All entries",day:"Day-wise summary",head:"Category-wise summary",
                  mode:"Cash vs bank",month:"Month-wise summary"};
@@ -1154,6 +1507,7 @@ function filtered(){
     if(f.type!=="all"&&t.type!==f.type) return false;
     if(f.mode!=="all"&&t.account!==f.mode) return false;
     if(f.head!=="all"&&headOf(t)!==f.head) return false;
+    if(f.xfer==="out"&&t.xfer) return false;
     return true;
   });
 }
@@ -1187,6 +1541,7 @@ function updateSummary(){
   el("sumType").textContent=typeText();
   el("sumHead").textContent=headText();
   el("sumMode").textContent=modeText();
+  el("sumXfer").textContent=filters.xfer==="out"?"Excluded":"Included";
 }
 
 /* ---- one dialog per filter ---- */
@@ -1227,6 +1582,14 @@ function openPicker(kind){
       }).join("")+'</div>';
     if(!heads.length) h+='<p class="note">No categories yet. Add some under Heads management.</p>';
   }
+  else if(kind==="xfer"){
+    el("pickTitle").textContent="Transfers";
+    h='<div class="optlist">'+
+      optHtml("in","Included",filters.xfer==="in")+
+      optHtml("out","Excluded",filters.xfer==="out")+'</div>'+
+      '<p class="note">Moving your own money between accounts isn\u2019t income or expense. '+
+      'Exclude transfers when you want to see what you actually earned and spent.</p>';
+  }
   else if(kind==="mode"){
     el("pickTitle").textContent="Payment mode";
     var mc=modeCounts();
@@ -1259,6 +1622,7 @@ el("pickBody").addEventListener("click",function(e){
   else if(pickKind==="type") filters.type=v;
   else if(pickKind==="head") filters.head=v;
   else if(pickKind==="mode") filters.mode=v;
+  else if(pickKind==="xfer") filters.xfer=v;
 });
 el("pickBody").addEventListener("change",function(e){
   if(e.target.id==="pFrom"||e.target.id==="pTo"){
@@ -1271,7 +1635,7 @@ el("pickBody").addEventListener("change",function(e){
 });
 el("btnPickDone").addEventListener("click",function(){ hide(); refreshReport(); });
 el("btnReset").addEventListener("click",function(){
-  filters={ preset:"all", from:"", to:"", type:"all", head:"all", mode:"all" };
+  filters={ preset:"all", from:"", to:"", type:"all", head:"all", mode:"all", xfer:"in" };
   refreshReport(); toast("Filters cleared");
 });
 el("repTypes").addEventListener("click",function(e){
@@ -1302,9 +1666,10 @@ function refreshReport(){
   var rows=filtered(), tin=0, tout=0;
   rows.forEach(function(t){ if(t.type==="in") tin+=+t.amount; else tout+=+t.amount; });
   var carry=carryForward(), finalBal=carry+tin-tout;
-  el("tIn").textContent=money(tin);
-  el("tOut").textContent=money(tout);
-  el("tNet").textContent=money(finalBal);
+  animNum(el("tIn"),tin);
+  animNum(el("tOut"),tout);
+  animNum(el("tNet"),finalBal);
+  el("tNet").classList.toggle("neg",finalBal<0);
   lastSummary={ in:tin, out:tout, final:finalBal, count:rows.length, carry:carry };
 
   if(!rows.length){ lastTable=null; return; }
