@@ -654,6 +654,17 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
     <input type="file" id="restoreFile" accept=".json,application/json" style="display:none">
     <button class="btn btn-danger full" id="btnWipe">Erase everything</button>
     <p class="note" id="storeWarn" style="display:none;color:var(--red)"></p>
+
+    <div style="border-top:1px solid var(--line);margin:6px 0 16px"></div>
+    <p class="note"><b>Google Drive backup</b> — sign in once and the app keeps a copy of everything in a private folder in your Drive. Lose the phone, install the app anywhere, sign in with the same account, and your data comes back.</p>
+    <p class="note">This needs a one-time Google Client ID of your own. Google shows an "unverified app" warning when you sign in — that's expected for a personal app, and you can continue past it. The app can only see the single file it creates; it has no access to anything else in your Drive.</p>
+    <label class="f"><span class="f-label">Google Client ID</span>
+      <input class="f-in" type="text" id="gClientId" placeholder="…apps.googleusercontent.com" autocomplete="off" spellcheck="false"></label>
+    <p class="note" id="gStatus"></p>
+    <button class="btn btn-accent full" id="btnGConnect">Connect Google account</button>
+    <button class="btn btn-ghost full" id="btnGSync">Back up now</button>
+    <button class="btn btn-ghost full" id="btnGRestore">Restore from Google</button>
+    <button class="btn btn-ghost full" id="btnGOff">Disconnect</button>
   </div>
   <div class="sheet-foot" style="grid-template-columns:1fr">
     <button class="btn btn-save" id="btnSetDone">Done</button>
@@ -705,8 +716,10 @@ function load(){
   catch(e){ persistent=false; return memory; }
 }
 function persist(){
+  state.updatedAt=new Date().toISOString();
   try{ localStorage.setItem(KEY,JSON.stringify(state)); }
   catch(e){ persistent=false; memory=state; }
+  if(typeof scheduleSync==="function") scheduleSync();
 }
 var state=load()||{ txns:[], heads:[], modes:null };
 if(!Array.isArray(state.txns)) state.txns=[];
@@ -1251,6 +1264,7 @@ el("btnXferGo").addEventListener("click",function(){
 
 /* ================= settings ================= */
 el("btnSettings").addEventListener("click",function(){
+  gRefreshUi();
   if(!persistent){
     var w=el("storeWarn"); w.style.display="";
     w.textContent="This browser is blocking saved data, so entries will disappear when you close the app. Install it to your home screen, or export often.";
@@ -1509,6 +1523,244 @@ el("restoreFile").addEventListener("change",function(){
     alert("That doesn't look like a Cashbook backup file. Pick the .json file created by \u201cSave full backup\u201d.");
   });
 });
+
+/* ================= Google Drive sync =================
+   Backs the whole state up to a hidden app-only folder in the user's Drive.
+   Scope is drive.appdata: this app can only see files it created itself,
+   never anything else in the account. No server involved. */
+
+var GKEY="cashbook.google";
+var gcfg=(function(){
+  try{ return JSON.parse(localStorage.getItem(GKEY))||{}; }catch(e){ return {}; }
+})();
+function gsave(){ try{ localStorage.setItem(GKEY,JSON.stringify(gcfg)); }catch(e){} }
+
+var FILENAME="cashbook-data.json";
+var gisLoading=null, tokenClient=null, syncTimer=null, syncing=false;
+
+function gStatus(msg,tone){
+  var n=el("gStatus");
+  if(!n) return;
+  n.textContent=msg;
+  n.style.color = tone==="bad" ? "var(--red)" : tone==="good" ? "var(--g-dark)" : "var(--dim)";
+}
+function gRefreshUi(){
+  var on=!!gcfg.connected;
+  el("gClientId").value=gcfg.clientId||"";
+  el("btnGConnect").textContent=on?"Reconnect Google account":"Connect Google account";
+  ["btnGSync","btnGRestore","btnGOff"].forEach(function(id){
+    el(id).style.display=on?"":"none";
+  });
+  if(!gcfg.clientId) gStatus("Paste your Google Client ID above to begin.");
+  else if(!on) gStatus("Not connected yet.");
+  else gStatus(gcfg.lastSync
+    ? "Last synced "+shortDate(new Date(gcfg.lastSync))+" "+timeLabel(new Date(gcfg.lastSync))
+    : "Connected. Not synced yet.","good");
+}
+
+function loadGis(){
+  if(window.google&&window.google.accounts&&window.google.accounts.oauth2)
+    return Promise.resolve();
+  if(gisLoading) return gisLoading;
+  gisLoading=new Promise(function(res,rej){
+    var s=document.createElement("script");
+    s.src="https://accounts.google.com/gsi/client";
+    s.async=true; s.defer=true;
+    s.onload=function(){ res(); };
+    s.onerror=function(){ gisLoading=null; rej(new Error("offline")); };
+    document.head.appendChild(s);
+  });
+  return gisLoading;
+}
+
+function ensureToken(interactive){
+  if(gcfg.token&&gcfg.exp&&Date.now()<gcfg.exp-60000)
+    return Promise.resolve(gcfg.token);
+  if(!gcfg.clientId) return Promise.reject(new Error("noclient"));
+  return loadGis().then(function(){
+    return new Promise(function(res,rej){
+      tokenClient=window.google.accounts.oauth2.initTokenClient({
+        client_id:gcfg.clientId,
+        scope:"https://www.googleapis.com/auth/drive.appdata",
+        callback:function(r){
+          if(r&&r.access_token){
+            gcfg.token=r.access_token;
+            gcfg.exp=Date.now()+((+r.expires_in||3600)*1000);
+            gcfg.connected=true; gsave();
+            res(r.access_token);
+          } else rej(new Error("denied"));
+        },
+        error_callback:function(){ rej(new Error("denied")); }
+      });
+      /* silent when we already have consent, full prompt on first connect */
+      tokenClient.requestAccessToken({ prompt: interactive?"consent":"" });
+    });
+  });
+}
+
+function gFetch(url,opts,token){
+  opts=opts||{};
+  opts.headers=opts.headers||{};
+  opts.headers.Authorization="Bearer "+token;
+  return fetch(url,opts).then(function(r){
+    if(r.status===401){ gcfg.token=null; gcfg.exp=0; gsave(); throw new Error("expired"); }
+    if(!r.ok) throw new Error("http"+r.status);
+    return r;
+  });
+}
+function driveFind(token){
+  var u="https://www.googleapis.com/drive/v3/files?spaces=appDataFolder"+
+        "&fields=files(id,name,modifiedTime)&q="+encodeURIComponent("name='"+FILENAME+"'");
+  return gFetch(u,{},token).then(function(r){ return r.json(); })
+    .then(function(j){ return (j.files&&j.files[0])||null; });
+}
+function drivePut(token,fileId,bodyText){
+  var b="cbk"+Date.now();
+  var meta=fileId?{name:FILENAME}:{name:FILENAME,parents:["appDataFolder"]};
+  var payload="--"+b+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+
+    JSON.stringify(meta)+"\r\n--"+b+
+    "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+
+    bodyText+"\r\n--"+b+"--";
+  var url=fileId
+    ? "https://www.googleapis.com/upload/drive/v3/files/"+fileId+"?uploadType=multipart"
+    : "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+  return gFetch(url,{
+    method:fileId?"PATCH":"POST",
+    headers:{"Content-Type":"multipart/related; boundary="+b},
+    body:payload
+  },token).then(function(r){ return r.json(); });
+}
+function driveGet(token,id){
+  return gFetch("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media",{},token)
+    .then(function(r){ return r.json(); });
+}
+function payloadText(){
+  return JSON.stringify({ app:"cashbook", version:1,
+    savedAt:state.updatedAt||new Date().toISOString(), data:state });
+}
+function applyRemote(d){
+  if(!d||!Array.isArray(d.txns)||!Array.isArray(d.modes)) throw new Error("shape");
+  state=d;
+  if(!Array.isArray(state.heads)) state.heads=[];
+  state.modes.forEach(function(m){ m.opening=+m.opening||0; });
+  filters.head="all"; filters.mode="all";
+  try{ localStorage.setItem(KEY,JSON.stringify(state)); }catch(e){}
+  render(); if(curView==="reports") refreshReport();
+}
+
+function syncNow(interactive){
+  if(syncing) return;
+  if(!gcfg.clientId){ gStatus("No Client ID set.","bad"); return; }
+  if(typeof navigator!=="undefined"&&navigator.onLine===false){
+    gStatus("Offline — will sync when you're back online.");
+    return;
+  }
+  syncing=true; gStatus("Syncing\u2026");
+  ensureToken(interactive).then(function(tok){
+    return driveFind(tok).then(function(f){
+      if(!f){
+        return drivePut(tok,null,payloadText()).then(function(){
+          gcfg.lastSync=new Date().toISOString(); gsave();
+          gStatus("Backed up to Google Drive.","good");
+        });
+      }
+      return driveGet(tok,f.id).then(function(remote){
+        var rt=remote&&remote.savedAt?Date.parse(remote.savedAt):0;
+        var lt=state.updatedAt?Date.parse(state.updatedAt):0;
+        var rn=remote&&remote.data&&remote.data.txns?remote.data.txns.length:0;
+        /* never overwrite a newer cloud copy without asking */
+        if(rt>lt+2000){
+          gStatus("Google has a newer backup.","bad");
+          if(confirm("Google Drive has a newer backup ("+rn+" entries, saved "+
+             shortDate(new Date(rt))+").\n\nLoad it and replace what's on this phone?")){
+            applyRemote(remote.data);
+            gcfg.lastSync=new Date().toISOString(); gsave();
+            gStatus("Restored from Google Drive.","good");
+            toast("Restored "+rn+" entries from Google",3000);
+          } else {
+            gStatus("Kept this phone's data. Tap Back up now to overwrite Google.");
+          }
+          return;
+        }
+        return drivePut(tok,f.id,payloadText()).then(function(){
+          gcfg.lastSync=new Date().toISOString(); gsave();
+          gStatus("Backed up to Google Drive.","good");
+        });
+      });
+    });
+  }).catch(function(e){
+    var m=e&&e.message;
+    gStatus(
+      m==="noclient" ? "Paste your Google Client ID first." :
+      m==="offline"  ? "Couldn't reach Google — check your connection." :
+      m==="denied"   ? "Sign-in was cancelled or refused." :
+      m==="expired"  ? "Sign-in expired. Tap Reconnect Google account." :
+      m==="shape"    ? "The backup in Drive looks damaged." :
+      "Sync failed ("+m+")." , "bad");
+  }).then(function(){ syncing=false; gRefreshUi.timer=null; });
+}
+
+function scheduleSync(){
+  if(!gcfg.connected) return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(function(){ syncNow(false); },4000);
+}
+
+el("gClientId").addEventListener("change",function(){
+  gcfg.clientId=this.value.trim();
+  gcfg.token=null; gcfg.exp=0;
+  gsave(); gRefreshUi();
+});
+el("btnGConnect").addEventListener("click",function(){
+  gcfg.clientId=el("gClientId").value.trim();
+  if(!gcfg.clientId){ gStatus("Paste your Client ID first.","bad"); return; }
+  gcfg.token=null; gcfg.exp=0; gsave();
+  gStatus("Opening Google sign-in\u2026");
+  ensureToken(true).then(function(){
+    gRefreshUi(); toast("Google account connected");
+    syncNow(false);
+  }).catch(function(e){
+    gStatus(e&&e.message==="offline"
+      ? "Couldn't load Google sign-in — check your connection."
+      : "Sign-in didn't complete.","bad");
+  });
+});
+el("btnGSync").addEventListener("click",function(){ syncNow(true); });
+el("btnGRestore").addEventListener("click",function(){
+  if(!gcfg.clientId){ gStatus("No Client ID set.","bad"); return; }
+  gStatus("Fetching from Google\u2026");
+  ensureToken(true).then(function(tok){
+    return driveFind(tok).then(function(f){
+      if(!f){ gStatus("No backup found in Drive yet.","bad"); return; }
+      return driveGet(tok,f.id).then(function(remote){
+        var n=remote&&remote.data&&remote.data.txns?remote.data.txns.length:0;
+        if(!confirm("Replace everything on this phone with the Google backup ("+
+           n+" entries)?")) { gStatus("Restore cancelled."); return; }
+        applyRemote(remote.data);
+        gcfg.lastSync=new Date().toISOString(); gsave();
+        gStatus("Restored from Google Drive.","good");
+        toast("Restored "+n+" entries",3000);
+      });
+    });
+  }).catch(function(){ gStatus("Couldn't restore from Google.","bad"); });
+});
+el("btnGOff").addEventListener("click",function(){
+  if(!confirm("Disconnect this Google account?\n\nYour entries stay on this phone, and the backup stays in Drive.")) return;
+  gcfg.token=null; gcfg.exp=0; gcfg.connected=false; gsave();
+  gRefreshUi(); toast("Disconnected");
+});
+
+/* sync when the app is backgrounded, and when a connection returns */
+if(typeof document.addEventListener==="function"){
+  document.addEventListener("visibilitychange",function(){
+    if(document.visibilityState==="hidden"&&gcfg.connected){
+      clearTimeout(syncTimer); syncNow(false);
+    }
+  });
+}
+if(typeof window.addEventListener==="function"){
+  window.addEventListener("online",function(){ if(gcfg.connected) syncNow(false); });
+}
 
 /* ================= views ================= */
 var curView="home";
@@ -2345,6 +2597,8 @@ if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
 }
 
 render();
+gRefreshUi();
+if(gcfg.connected) setTimeout(function(){ syncNow(false); },1200);
 </script>
 </body>
 </html>

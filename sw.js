@@ -1,5 +1,5 @@
 /* Cashbook offline cache */
-var CACHE = "cashbook-v10";
+var CACHE = "cashbook-v11";
 var ASSETS = [
   "./",
   "./index.html",
@@ -32,6 +32,13 @@ self.addEventListener("activate", function(e){
 
 self.addEventListener("fetch", function(e){
   if(e.request.method !== "GET") return;
+  /* Only ever serve our own files from cache. Google sign-in and the Drive API
+     must go straight to the network — caching them, or falling back to
+     index.html when they fail, would break sync in confusing ways. */
+  var url;
+  try{ url = new URL(e.request.url); }catch(err){ return; }
+  if(url.origin !== self.location.origin) return;
+
   e.respondWith(
     caches.match(e.request).then(function(hit){
       if(hit) return hit;
