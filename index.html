@@ -121,8 +121,13 @@ svg{display:block}
 .r-bal{font-size:11px;color:var(--faint);white-space:nowrap;font-weight:600}
 .tg{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.07em;
   text-transform:uppercase;padding:1.5px 6px;border-radius:5px;margin-right:6px}
-.tg.cash{background:var(--g-100);color:var(--g-dark)}
-.tg.bank{background:var(--slate-50);color:var(--slate)}
+.m0{background:var(--g-100);color:var(--g-dark)}
+.m1{background:var(--slate-50);color:var(--slate)}
+.m2{background:#E0F2F1;color:#00695C}
+.m3{background:#FFF3E0;color:#B26A00}
+.m4{background:#EDE7F6;color:#5E35B1}
+.m5{background:#FCE4EC;color:#AD1457}
+.dotm{width:8px;height:8px;border-radius:50%;display:inline-block;flex:0 0 auto}
 
 .empty{padding:46px 24px;text-align:center;color:var(--dim)}
 .empty h2{font-size:16px;color:var(--text);margin:0 0 7px;font-weight:700}
@@ -241,9 +246,34 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
 .seg button{background:var(--white);border:1px solid var(--line2);border-radius:12px;
   padding:14px 6px;font-size:13px;font-weight:800;letter-spacing:.06em;
   text-transform:uppercase;color:var(--dim);cursor:pointer}
-#segCash[aria-pressed="true"]{background:var(--grad);border-color:transparent;color:#fff}
-#segBank[aria-pressed="true"]{background:linear-gradient(135deg,#5B7B89,#4A6572);
-  border-color:transparent;color:#fff}
+
+/* payment-mode picker inside the entry sheet */
+.modegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.modebtn{display:flex;align-items:center;justify-content:center;gap:7px;
+  background:var(--white);border:1px solid var(--line2);border-radius:12px;
+  padding:12px 8px;font-size:13px;font-weight:700;color:var(--dim);cursor:pointer;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modebtn[aria-pressed="true"]{background:var(--grad);border-color:transparent;color:#fff}
+.modebtn[aria-pressed="true"] .dotm{background:#fff}
+
+/* tabs in the management sheet */
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:0;background:var(--g-50);
+  border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:16px}
+.tab{background:none;border:0;border-radius:9px;padding:10px 6px;cursor:pointer;
+  font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.tab[aria-pressed="true"]{background:var(--white);color:var(--g-dark);box-shadow:var(--shadow)}
+
+.modecard{border:1px solid var(--line);border-radius:13px;padding:12px 13px;margin-bottom:9px}
+.mc-top{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.mc-n{font-size:15px;font-weight:700;flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc-c{font-size:11.5px;color:var(--faint);font-weight:600;white-space:nowrap}
+.mc-bot{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}
+.mc-open{width:100%;background:var(--white);border:1px solid var(--line2);border-radius:9px;
+  padding:9px 10px;font-size:14px}
+.mc-open:focus{outline:2px solid var(--g);outline-offset:-1px;border-color:transparent}
+.mc-lab{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);display:block;margin-bottom:4px}
 
 .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
 .chip{background:var(--g-50);border:1px solid var(--g-200);border-radius:20px;
@@ -321,10 +351,7 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
     </div>
     <span class="hero-lab">Total balance</span>
     <div class="hero-total num" id="balTotal">0</div>
-    <div class="hero-split">
-      <div class="hs"><span class="hs-l">Cash in hand</span><span class="hs-v num" id="balCash">0</span></div>
-      <div class="hs"><span class="hs-l">Cash in bank</span><span class="hs-v num" id="balBank">0</span></div>
-    </div>
+    <div class="hero-split" id="modeCards"></div>
   </div>
 
   <div class="searchwrap">
@@ -446,10 +473,7 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
     <label class="f"><span class="f-label">Remark</span>
       <input class="f-in" type="text" id="fDetail" placeholder="What was this for?" autocomplete="off"></label>
     <div class="f"><span class="f-label">Paid from / received in</span>
-      <div class="seg">
-        <button type="button" id="segCash" aria-pressed="true">Cash</button>
-        <button type="button" id="segBank" aria-pressed="false">Bank</button>
-      </div>
+      <div class="modegrid" id="modeSel"></div>
     </div>
   </div>
   <div class="sheet-foot">
@@ -471,12 +495,28 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
 <div class="sheet" id="headsSheet" role="dialog" aria-modal="true" aria-labelledby="headsTitle">
   <div class="sheet-top"><div class="grab"></div><h1 class="sheet-title" id="headsTitle">Heads management</h1></div>
   <div class="sheet-body">
-    <p class="note">Renaming a category updates every entry that uses it. A category can only be deleted when no entries reference it.</p>
-    <div class="addrow">
-      <input class="f-in" type="text" id="newHead" placeholder="New category name" autocomplete="off">
-      <button class="btn btn-accent" id="btnAddHead" style="padding:13px 16px">Add</button>
+    <div class="tabs" id="mgTabs">
+      <button class="tab" data-t="cat" aria-pressed="true">Categories</button>
+      <button class="tab" data-t="mode" aria-pressed="false">Payment modes</button>
     </div>
-    <div id="headsList"></div>
+
+    <div id="panelCat">
+      <p class="note">Renaming a category updates every entry that uses it. A category can only be deleted when no entries reference it.</p>
+      <div class="addrow">
+        <input class="f-in" type="text" id="newHead" placeholder="New category name" autocomplete="off">
+        <button class="btn btn-accent" id="btnAddHead" style="padding:13px 16px">Add</button>
+      </div>
+      <div id="headsList"></div>
+    </div>
+
+    <div id="panelMode" style="display:none">
+      <p class="note">Each payment mode keeps its own balance — cash in hand, a bank account, NayaPay, whatever you use. Set what each held before you started in the Opening box.</p>
+      <div class="addrow">
+        <input class="f-in" type="text" id="newMode" placeholder="e.g. Meezan Bank, NayaPay" autocomplete="off">
+        <button class="btn btn-accent" id="btnAddMode" style="padding:13px 16px">Add</button>
+      </div>
+      <div id="modesList"></div>
+    </div>
   </div>
   <div class="sheet-foot" style="grid-template-columns:1fr">
     <button class="btn btn-save" id="btnHeadsDone">Done</button>
@@ -487,13 +527,7 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
 <div class="sheet" id="setSheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
   <div class="sheet-top"><div class="grab"></div><h1 class="sheet-title" id="setTitle">Settings</h1></div>
   <div class="sheet-body">
-    <p class="note">Opening balances are what you had before you started using this app. Everything you record is added on top of them.</p>
-    <div class="setrow">
-      <label class="f"><span class="f-label">Opening cash</span>
-        <input class="f-in num" type="text" inputmode="decimal" id="sCash" autocomplete="off"></label>
-      <label class="f"><span class="f-label">Opening bank</span>
-        <input class="f-in num" type="text" inputmode="decimal" id="sBank" autocomplete="off"></label>
-    </div>
+    <p class="note">Opening balances now live with each payment mode. Open <b>Heads management</b> from the home screen and switch to the <b>Payment modes</b> tab to set what each account held before you started.</p>
     <p class="note">Your records live on this phone only. Export a backup now and then — the file opens directly in Excel.</p>
     <button class="btn btn-ghost full" id="btnImport">Import from Excel or CSV</button>
     <input type="file" id="impFile" accept=".xlsx,.csv,.txt,text/csv" style="display:none">
@@ -554,9 +588,58 @@ function persist(){
   try{ localStorage.setItem(KEY,JSON.stringify(state)); }
   catch(e){ persistent=false; memory=state; }
 }
-var state=load()||{ openingCash:0, openingBank:0, txns:[], heads:[] };
+var state=load()||{ txns:[], heads:[], modes:null };
 if(!Array.isArray(state.txns)) state.txns=[];
 if(!Array.isArray(state.heads)) state.heads=[];
+/* migrate the old fixed cash/bank pair into the mode list */
+if(!Array.isArray(state.modes)||!state.modes.length){
+  state.modes=[
+    { id:"cash", name:"Cash", opening:+state.openingCash||0 },
+    { id:"bank", name:"Bank", opening:+state.openingBank||0 }
+  ];
+  delete state.openingCash; delete state.openingBank;
+}
+state.modes.forEach(function(m){ m.opening=+m.opening||0; });
+
+/* ---- payment modes ---- */
+function modeById(id){
+  for(var i=0;i<state.modes.length;i++) if(state.modes[i].id===id) return state.modes[i];
+  return null;
+}
+function modeName(id){ var m=modeById(id); return m?m.name:"Unknown"; }
+function modeIdx(id){
+  for(var i=0;i<state.modes.length;i++) if(state.modes[i].id===id) return i;
+  return 0;
+}
+function modeClass(id){ return "m"+(modeIdx(id)%6); }
+function modeColor(id){
+  var p=["#0F9D58","#4A6572","#00695C","#B26A00","#5E35B1","#AD1457"];
+  return p[modeIdx(id)%6];
+}
+function findModeByName(name){
+  var n=String(name==null?"":name).trim().toLowerCase();
+  if(!n) return null;
+  for(var i=0;i<state.modes.length;i++){
+    if(state.modes[i].name.toLowerCase()===n) return state.modes[i];
+  }
+  return null;
+}
+function slug(name){
+  var base=String(name).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"mode";
+  var id=base,n=2;
+  while(modeById(id)){ id=base+"-"+n; n++; }
+  return id;
+}
+function addMode(name){
+  var m={ id:slug(name), name:String(name).trim(), opening:0 };
+  state.modes.push(m);
+  return m;
+}
+function modeCounts(){
+  var m={};
+  state.txns.forEach(function(t){ m[t.account]=(m[t.account]||0)+1; });
+  return m;
+}
 
 /* ================= helpers ================= */
 var fmt=new Intl.NumberFormat("en-PK",{minimumFractionDigits:0,maximumFractionDigits:2});
@@ -598,12 +681,21 @@ function sorted(){
   });
 }
 function balances(){
-  var c=+state.openingCash||0, b=+state.openingBank||0;
+  var per={}, total=0;
+  state.modes.forEach(function(m){ per[m.id]=+m.opening||0; total+=+m.opening||0; });
   state.txns.forEach(function(t){
     var s=t.type==="in"?+t.amount:-t.amount;
-    if(t.account==="bank") b+=s; else c+=s;
+    if(per[t.account]===undefined) per[t.account]=0;
+    per[t.account]+=s; total+=s;
   });
-  return { cash:c, bank:b, total:c+b };
+  return { per:per, total:total };
+}
+function openingTotal(modeFilter){
+  var s=0;
+  state.modes.forEach(function(m){
+    if(modeFilter==="all"||m.id===modeFilter) s+=+m.opening||0;
+  });
+  return s;
 }
 function headOf(t){ return (t.head&&t.head.trim())?t.head.trim():"Uncategorised"; }
 function headCounts(){
@@ -630,17 +722,21 @@ var homeQ="";
 
 function render(){
   var b=balances();
-  setBal(el("balCash"),b.cash); setBal(el("balBank"),b.bank);
   el("balTotal").textContent=money(b.total);
+  el("modeCards").innerHTML=state.modes.map(function(m){
+    return '<div class="hs"><span class="hs-l">'+esc(m.name)+'</span>'+
+      '<span class="hs-v num">'+money(b.per[m.id]||0)+'</span></div>';
+  }).join("");
 
   var list=el("list"), all=sorted();
-  var run=(+state.openingCash||0)+(+state.openingBank||0), runMap={};
+  var run=openingTotal("all"), runMap={};
   all.forEach(function(t){ run+=t.type==="in"?+t.amount:-t.amount; runMap[t.id]=run; });
 
   var rows=all;
   if(homeQ){
     rows=all.filter(function(t){
-      return ((t.head||"")+" "+(t.detail||"")).toLowerCase().indexOf(homeQ)>=0;
+      return ((t.head||"")+" "+(t.detail||"")+" "+modeName(t.account))
+        .toLowerCase().indexOf(homeQ)>=0;
     });
   }
   el("listHead").textContent = homeQ
@@ -679,8 +775,8 @@ function render(){
         '<span class="r-ico '+t.type+'">'+(t.type==="in"?"+":"\u2212")+'</span>'+
         '<span class="r-head">'+esc(headOf(t))+'</span>'+
         '<span class="r-amt num '+t.type+'">'+sign+money(t.amount)+'</span>'+
-        '<span class="r-meta"><span class="tg '+(t.account==="bank"?"bank":"cash")+'">'+
-          (t.account==="bank"?"Bank":"Cash")+'</span>'+esc(timeLabel(d))+
+        '<span class="r-meta"><span class="tg '+modeClass(t.account)+'">'+
+          esc(modeName(t.account))+'</span>'+esc(timeLabel(d))+
           (t.detail?" \u00B7 "+esc(t.detail):"")+'</span>'+
         '<span class="r-bal num">'+money(runMap[t.id])+'</span>'+
       '</button>';
@@ -725,14 +821,23 @@ function hideAll(){
 el("scrim").addEventListener("click",hideAll);
 
 /* ================= entry form ================= */
-var editingId=null, curType="in", curAccount="cash";
-function setAccount(a){
-  curAccount=a;
-  el("segCash").setAttribute("aria-pressed",a==="cash"?"true":"false");
-  el("segBank").setAttribute("aria-pressed",a==="bank"?"true":"false");
+var editingId=null, curType="in", curAccount=null;
+function renderModeSel(){
+  el("modeSel").innerHTML=state.modes.map(function(m){
+    return '<button type="button" class="modebtn" data-m="'+esc(m.id)+'" '+
+      'aria-pressed="'+(m.id===curAccount?"true":"false")+'">'+
+      '<span class="dotm" style="background:'+modeColor(m.id)+'"></span>'+esc(m.name)+'</button>';
+  }).join("");
 }
-el("segCash").addEventListener("click",function(){ setAccount("cash"); });
-el("segBank").addEventListener("click",function(){ setAccount("bank"); });
+function setAccount(a){
+  if(!modeById(a)) a=state.modes.length?state.modes[0].id:null;
+  curAccount=a;
+  renderModeSel();
+}
+el("modeSel").addEventListener("click",function(e){
+  var b=e.target.closest(".modebtn");
+  if(b) setAccount(b.dataset.m);
+});
 
 function fillHeads(){
   var heads=allHeads().filter(function(h){ return h!=="Uncategorised"; });
@@ -765,7 +870,7 @@ function openEntry(type,txn){
   el("fAmount").value=txn?txn.amount:"";
   el("fHead").value=txn?(txn.head||""):"";
   el("fDetail").value=txn?(txn.detail||""):"";
-  setAccount(txn?txn.account:"cash");
+  setAccount(txn?txn.account:(state.modes[0]&&state.modes[0].id));
   var foot=el("sheet").querySelector(".sheet-foot"), del=el("btnDelete");
   if(editingId){
     if(!del){
@@ -817,22 +922,20 @@ function doDelete(){
 
 /* ================= settings ================= */
 el("btnSettings").addEventListener("click",function(){
-  el("sCash").value=state.openingCash||0;
-  el("sBank").value=state.openingBank||0;
   if(!persistent){
     var w=el("storeWarn"); w.style.display="";
     w.textContent="This browser is blocking saved data, so entries will disappear when you close the app. Install it to your home screen, or export often.";
   }
   show("setSheet");
 });
-el("btnSetDone").addEventListener("click",function(){
-  var c=parseAmt(el("sCash").value), b=parseAmt(el("sBank").value);
-  state.openingCash=isFinite(c)?c:0; state.openingBank=isFinite(b)?b:0;
-  persist(); render(); hide(); toast("Opening balances saved");
-});
+el("btnSetDone").addEventListener("click",hide);
 el("btnWipe").addEventListener("click",function(){
-  if(!confirm("Erase every entry and reset opening balances? This cannot be undone.")) return;
-  state={ openingCash:0, openingBank:0, txns:[], heads:[] };
+  if(!confirm("Erase every entry, category and payment mode? This cannot be undone.")) return;
+  state={ txns:[], heads:[], modes:[
+    { id:"cash", name:"Cash", opening:0 },
+    { id:"bank", name:"Bank", opening:0 }
+  ] };
+  filters.mode="all"; filters.head="all";
   persist(); render(); hide(); toast("All entries erased");
 });
 
@@ -854,7 +957,81 @@ function renderHeads(){
       '</span></div>';
   }).join("");
 }
-el("btnHeads").addEventListener("click",function(){ renderHeads(); show("headsSheet"); });
+function renderModes(){
+  var counts=modeCounts(), b=balances();
+  el("modesList").innerHTML=state.modes.map(function(m){
+    var n=counts[m.id]||0;
+    return '<div class="modecard" data-m="'+esc(m.id)+'">'+
+      '<div class="mc-top">'+
+        '<span class="dotm" style="background:'+modeColor(m.id)+'"></span>'+
+        '<span class="mc-n">'+esc(m.name)+'</span>'+
+        '<span class="mc-c">'+money(b.per[m.id]||0)+' \u00B7 '+n+(n===1?" entry":" entries")+'</span>'+
+      '</div>'+
+      '<div class="mc-bot">'+
+        '<span><span class="mc-lab">Opening balance</span>'+
+          '<input class="mc-open num" type="text" inputmode="decimal" data-act="open" '+
+          'value="'+esc(String(m.opening||0))+'"></span>'+
+        '<button class="hr-b" data-act="ren" style="align-self:end">Rename</button>'+
+        (n===0&&state.modes.length>1
+          ?'<button class="hr-b del" data-act="del" style="align-self:end">Delete</button>':'')+
+      '</div></div>';
+  }).join("");
+}
+el("mgTabs").addEventListener("click",function(e){
+  var b=e.target.closest(".tab"); if(!b) return;
+  var isCat=b.dataset.t==="cat";
+  Array.prototype.forEach.call(this.querySelectorAll(".tab"),function(x){
+    x.setAttribute("aria-pressed",x===b?"true":"false");
+  });
+  el("panelCat").style.display=isCat?"":"none";
+  el("panelMode").style.display=isCat?"none":"";
+  if(isCat) renderHeads(); else renderModes();
+});
+el("btnAddMode").addEventListener("click",function(){
+  var v=el("newMode").value.trim();
+  if(!v){ toast("Type a payment mode name first"); return; }
+  if(findModeByName(v)){ toast("That payment mode already exists"); return; }
+  addMode(v); persist();
+  el("newMode").value=""; renderModes(); render();
+  toast("Payment mode added");
+});
+el("modesList").addEventListener("change",function(e){
+  if(e.target.dataset.act!=="open") return;
+  var id=e.target.closest(".modecard").dataset.m, m=modeById(id);
+  if(!m) return;
+  var v=parseAmt(e.target.value);
+  m.opening=isFinite(v)?v:0;
+  persist(); render(); renderModes();
+  if(curView==="reports") refreshReport();
+  toast("Opening balance saved");
+});
+el("modesList").addEventListener("click",function(e){
+  var b=e.target.closest(".hr-b"); if(!b) return;
+  var id=b.closest(".modecard").dataset.m, m=modeById(id);
+  if(!m) return;
+  if(b.dataset.act==="del"){
+    if(!confirm('Delete the payment mode "'+m.name+'"?')) return;
+    state.modes=state.modes.filter(function(x){ return x.id!==id; });
+    if(filters.mode===id) filters.mode="all";
+    persist(); renderModes(); render();
+    if(curView==="reports") refreshReport();
+    toast("Payment mode deleted");
+    return;
+  }
+  var nv=prompt("Rename payment mode",m.name);
+  if(nv===null) return;
+  nv=nv.trim();
+  if(!nv){ toast("Name can't be empty"); return; }
+  var clash=findModeByName(nv);
+  if(clash&&clash.id!==id){ toast("Another payment mode has that name"); return; }
+  m.name=nv;
+  persist(); renderModes(); render();
+  if(curView==="reports") refreshReport();
+  toast("Renamed");
+});
+el("btnHeads").addEventListener("click",function(){
+  renderHeads(); renderModes(); show("headsSheet");
+});
 el("btnHeadsDone").addEventListener("click",function(){
   hide(); if(curView==="reports") refreshReport();
 });
@@ -919,13 +1096,13 @@ function q(s){ return '"'+String(s==null?"":s).replace(/"/g,'""')+'"'; }
 el("btnExport").addEventListener("click",function(){
   var rows=sorted();
   if(!rows.length){ toast("Nothing to export yet"); return; }
-  var run=(+state.openingCash||0)+(+state.openingBank||0);
+  var run=openingTotal("all");
   var out=["Date,Time,Type,Category,Remark,Mode,Cash in,Cash out,Balance"];
   rows.forEach(function(t){
     var d=new Date(t.ts);
     run+=t.type==="in"?+t.amount:-t.amount;
     out.push([q(shortDate(d)),q(timeLabel(d)),q(t.type==="in"?"Cash in":"Cash out"),
-      q(headOf(t)),q(t.detail),q(t.account==="bank"?"Bank":"Cash"),
+      q(headOf(t)),q(t.detail),q(modeName(t.account)),
       t.type==="in"?plain(t.amount):"", t.type==="out"?plain(t.amount):"", plain(run)].join(","));
   });
   deliver(csvBlob(out.join("\r\n")),"cashbook-all-"+ymd(new Date())+".csv","Cashbook backup")
@@ -983,9 +1160,7 @@ function filtered(){
 /* balance carried into the period, so the report's Balance column is a true ledger figure */
 function carryForward(){
   var f=filters;
-  var base = f.mode==="cash" ? (+state.openingCash||0)
-           : f.mode==="bank" ? (+state.openingBank||0)
-           : (+state.openingCash||0)+(+state.openingBank||0);
+  var base = openingTotal(f.mode);
   if(!f.from) return base;
   var from=new Date(f.from+"T00:00:00");
   sorted().forEach(function(t){
@@ -1004,7 +1179,7 @@ function periodText(){
   return a+" \u2013 "+b;
 }
 function typeText(){ return filters.type==="all"?"All":(filters.type==="in"?"Cash in":"Cash out"); }
-function modeText(){ return filters.mode==="all"?"Cash & bank":(filters.mode==="cash"?"Cash":"Bank"); }
+function modeText(){ return filters.mode==="all"?"All modes":modeName(filters.mode); }
 function headText(){ return filters.head==="all"?"All categories":filters.head; }
 
 function updateSummary(){
@@ -1054,10 +1229,12 @@ function openPicker(kind){
   }
   else if(kind==="mode"){
     el("pickTitle").textContent="Payment mode";
-    h='<div class="optlist">'+
-      optHtml("all","Cash & bank",filters.mode==="all")+
-      optHtml("cash","Cash only",filters.mode==="cash")+
-      optHtml("bank","Bank only",filters.mode==="bank")+'</div>';
+    var mc=modeCounts();
+    h='<div class="optlist">'+optHtml("all","All modes",filters.mode==="all",
+        state.txns.length+"")+
+      state.modes.map(function(m){
+        return optHtml(m.id,m.name,filters.mode===m.id,(mc[m.id]||0)+"");
+      }).join("")+'</div>';
   }
   b.innerHTML=h;
   show("pickSheet");
@@ -1140,8 +1317,8 @@ function refreshReport(){
   else if(repType==="head") buildGroup(
       groupBy(rows,headOf,headOf).sort(function(a,b){ return (b.in+b.out)-(a.in+a.out); }),"Category",false);
   else if(repType==="mode") buildGroup(
-      groupBy(rows,function(t){ return t.account==="bank"?"bank":"cash"; },
-              function(t){ return t.account==="bank"?"Bank":"Cash"; }),"Mode",false);
+      groupBy(rows,function(t){ return t.account; },
+              function(t){ return modeName(t.account); }),"Mode",false);
 }
 
 function buildEntries(rows,carry){
@@ -1149,13 +1326,13 @@ function buildEntries(rows,carry){
   rows.forEach(function(t){
     var d=new Date(t.ts);
     run+=t.type==="in"?+t.amount:-t.amount;
-    data.push([ shortDate(d), t.detail||"", headOf(t), t.account==="bank"?"Bank":"Cash",
+    data.push([ shortDate(d), t.detail||"", headOf(t), modeName(t.account),
       t.type==="in"?plain(t.amount):"", t.type==="out"?plain(t.amount):"", plain(run) ]);
   });
   lastTable={
-    cols:[ {t:"Date",w:74,a:"l"}, {t:"Remark",w:196,a:"l"}, {t:"Category",w:132,a:"l"},
-           {t:"Mode",w:56,a:"l"}, {t:"Cash in",w:96,a:"r",cls:"in"},
-           {t:"Cash out",w:96,a:"r",cls:"out"}, {t:"Balance",w:106,a:"r"} ],
+    cols:[ {t:"Date",w:70,a:"l"}, {t:"Remark",w:172,a:"l"}, {t:"Category",w:118,a:"l"},
+           {t:"Mode",w:98,a:"l"}, {t:"Cash in",w:92,a:"r",cls:"in"},
+           {t:"Cash out",w:92,a:"r",cls:"out"}, {t:"Balance",w:100,a:"r"} ],
     rows:data,
     totals:[shortDate(new Date()),"Final Balance","","","","",plain(run)]
   };
@@ -1547,11 +1724,11 @@ function impDate(v,dayFirst){
   var d2=new Date(s);
   return isNaN(d2.getTime())?null:d2;
 }
-function impMode(v,def){
-  var s=String(v==null?"":v).toLowerCase();
-  if(/bank|cheque|check|online|transfer|ibft|card/.test(s)) return "bank";
-  if(/cash/.test(s)) return "cash";
-  return def;
+/* Resolve a mode cell to an existing mode id, or report the raw name so the
+   importer can offer to create it. Never silently collapses to cash/bank. */
+function impModeName(v){
+  var s=String(v==null?"":v).trim();
+  return s.replace(/\s+/g," ");
 }
 function impType(v){
   var s=String(v==null?"":v).toLowerCase();
@@ -1606,6 +1783,9 @@ function openImport(){
   fillMapSelect(el("mHead"),/categor|head|account|nature|purpose/i,true);
   fillMapSelect(el("mDetail"),/remark|detail|descrip|narration|note|particular/i,true);
   fillMapSelect(el("mMode"),/mode|method|bank|payment|through/i,true);
+  el("mDefMode").innerHTML=state.modes.map(function(m){
+    return '<option value="'+esc(m.id)+'">'+esc(m.name)+'</option>';
+  }).join("");
   updateImpLayout();
   show("impSheet");
 }
@@ -1629,7 +1809,7 @@ function buildImport(){
   var cA=+el("mAmt").value,cT=+el("mType").value;
   var cH=+el("mHead").value,cX=+el("mDetail").value,cM=+el("mMode").value;
   var get=function(r,i){ return i>=0&&r[i]!=null?r[i]:""; };
-  var ok=[],skipped=0;
+  var ok=[],skipped=0,newModes=[],canon={};
   impRows.forEach(function(r){
     var d=impDate(get(r,cD),dayFirst),type=null,amt=NaN;
     if(split){
@@ -1641,11 +1821,24 @@ function buildImport(){
       if(isFinite(v)&&v!==0){ type=impType(get(r,cT))||(v<0?"out":"in"); amt=Math.abs(v); }
     }
     if(!d||!type||!isFinite(amt)||amt<=0){ skipped++; return; }
+    var mName=impModeName(get(r,cM));
+    var acct;
+    if(!mName) acct=defMode;
+    else {
+      var found=findModeByName(mName);
+      if(found) acct=found.id;
+      else {
+        /* "NayaPay" and "nayapay" are the same account: keep the first spelling */
+        var k=mName.toLowerCase();
+        if(!canon[k]){ canon[k]=mName; newModes.push(mName); }
+        acct="\u0000new:"+canon[k];   /* placeholder, resolved on import */
+      }
+    }
     ok.push({ id:uid(),ts:d.toISOString(),type:type,amount:Math.round(amt*100)/100,
       head:String(get(r,cH)).trim(),detail:String(get(r,cX)).trim(),
-      account:impMode(get(r,cM),defMode) });
+      account:acct });
   });
-  return { rows:ok, skipped:skipped };
+  return { rows:ok, skipped:skipped, newModes:newModes };
 }
 function previewImport(){
   if(!impRows) return;
@@ -1663,13 +1856,28 @@ function previewImport(){
     (res.skipped?' \u00B7 '+res.skipped+' rows skipped':'')+'<br>'+
     'In '+money(ti)+' \u00B7 Out '+money(to)+' \u00B7 Net '+money(ti-to)+'<br>'+
     shortDate(new Date(span[0]))+' to '+shortDate(new Date(span[span.length-1]))+
+    (res.newModes.length
+      ? '<br><b style="color:var(--g-dark)">New payment modes to be created: </b>'+
+        esc(res.newModes.join(", "))
+      : '')+
     '<br>These are added to what you already have \u2014 nothing is replaced.';
 }
 el("btnImpCancel").addEventListener("click",function(){ impRows=null; hide(); });
 el("btnImpGo").addEventListener("click",function(){
   var res=buildImport();
   if(!res.rows.length) return;
-  if(!confirm("Add "+res.rows.length+" entries to your cashbook?")) return;
+  if(!confirm("Add "+res.rows.length+" entries to your cashbook?"+
+    (res.newModes.length?"\n\nThis also creates "+res.newModes.length+
+     " new payment mode(s): "+res.newModes.join(", "):""))) return;
+
+  /* create any payment modes the file referenced, then point rows at them */
+  var map={};
+  res.newModes.forEach(function(name){ map[name]=addMode(name).id; });
+  res.rows.forEach(function(t){
+    if(t.account.indexOf("\u0000new:")===0){
+      t.account=map[t.account.slice(5)]||(state.modes[0]&&state.modes[0].id);
+    }
+  });
   state.txns=state.txns.concat(res.rows);
   var known=state.heads.map(function(h){ return h.toLowerCase(); });
   res.rows.forEach(function(t){
@@ -1679,7 +1887,8 @@ el("btnImpGo").addEventListener("click",function(){
   persist(); render();
   if(curView==="reports") refreshReport();
   impRows=null; hide();
-  toast(res.rows.length+" entries imported");
+  toast(res.rows.length+" entries imported"+
+    (res.newModes.length?" \u00B7 "+res.newModes.length+" new payment modes":""));
 });
 
 /* ================= keyboard ================= */
