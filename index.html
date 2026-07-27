@@ -562,6 +562,21 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
   </div>
 </div>
 
+<!-- export chooser -->
+<div class="sheet" id="chooseSheet" role="dialog" aria-modal="true" aria-labelledby="chooseTitle">
+  <div class="sheet-top"><div class="grab"></div><h1 class="sheet-title" id="chooseTitle">Your file is ready</h1></div>
+  <div class="sheet-body">
+    <p class="note" style="margin-bottom:10px"><b id="chooseName"></b></p>
+    <p class="note" id="chooseWhy"></p>
+    <button class="btn btn-accent full" id="btnChooseOpen">Open it now</button>
+    <button class="btn btn-ghost full" id="btnChooseSave">Save to device</button>
+    <p class="note">Open shows it straight away in your PDF viewer, and you can share it onward from there. Save puts it in Downloads.</p>
+  </div>
+  <div class="sheet-foot" style="grid-template-columns:1fr">
+    <button class="btn btn-ghost" id="btnChooseClose">Close</button>
+  </div>
+</div>
+
 <!-- transfer sheet -->
 <div class="sheet" id="xferSheet" role="dialog" aria-modal="true" aria-labelledby="xferTitle">
   <div class="sheet-top"><div class="grab"></div><h1 class="sheet-title" id="xferTitle">Transfer between accounts</h1></div>
@@ -1387,23 +1402,68 @@ el("headsList").addEventListener("click",function(e){
   toast(n?"Renamed \u00B7 "+n+" entries updated":"Renamed");
 });
 
-/* ================= file delivery ================= */
-async function deliver(blob,filename,label){
-  try{
-    if(navigator.canShare && typeof File!=="undefined"){
-      var f=new File([blob],filename,{type:blob.type});
-      if(navigator.canShare({files:[f]})){
-        await navigator.share({files:[f],title:label||filename});
-        return "shared";
-      }
-    }
-  }catch(e){ if(e&&e.name==="AbortError") return "cancelled"; }
-  var a=document.createElement("a");
-  a.href=URL.createObjectURL(blob); a.download=filename;
-  document.body.appendChild(a); a.click();
-  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1500);
-  return "downloaded";
+/* ================= file delivery =================
+   Preferred path is Android's share sheet, so the file can go straight to
+   Drive, WhatsApp or a PDF viewer. That needs a secure context (https, or the
+   app installed to the home screen). When it isn't available we say so and
+   offer Open / Save explicitly, rather than quietly dumping it in Downloads. */
+var pendingBlob=null, pendingName="";
+
+function shareReason(){
+  if(typeof navigator==="undefined") return "";
+  if(typeof window!=="undefined" && window.isSecureContext===false)
+    return "Your phone only offers the share sheet over https. Open the app from its home-screen icon, or from the github.io address, and this becomes one tap.";
+  if(!navigator.canShare || typeof File==="undefined")
+    return "This browser can\u2019t hand files to other apps. Use Open or Save below.";
+  return "This browser wouldn\u2019t open the share sheet for this file. Use Open or Save below.";
 }
+function openChooser(blob,filename,why){
+  pendingBlob=blob; pendingName=filename;
+  el("chooseName").textContent=filename;
+  el("chooseWhy").textContent=why||"";
+  el("chooseWhy").style.display=why?"":"none";
+  show("chooseSheet");
+}
+function blobUrl(blob){
+  var u=URL.createObjectURL(blob);
+  setTimeout(function(){ URL.revokeObjectURL(u); },60000);
+  return u;
+}
+function saveToDevice(blob,filename){
+  var a=document.createElement("a");
+  a.href=blobUrl(blob); a.download=filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ a.remove(); },1000);
+}
+function deliver(blob,filename,label){
+  var f=null;
+  try{ f=new File([blob],filename,{type:blob.type}); }catch(e){}
+  if(f && navigator.canShare && navigator.canShare({files:[f]})){
+    navigator.share({ files:[f], title:label||filename })
+      .then(function(){ toast("Sent"); })
+      .catch(function(e){
+        if(e && e.name==="AbortError") return;      /* user backed out */
+        openChooser(blob,filename,shareReason());
+      });
+    return;
+  }
+  openChooser(blob,filename,shareReason());
+}
+el("btnChooseOpen").addEventListener("click",function(){
+  if(!pendingBlob) return;
+  var a=document.createElement("a");
+  a.href=blobUrl(pendingBlob); a.target="_blank"; a.rel="noopener";
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ a.remove(); },1000);
+  hide();
+});
+el("btnChooseClose").addEventListener("click",hide);
+el("btnChooseSave").addEventListener("click",function(){
+  if(!pendingBlob) return;
+  saveToDevice(pendingBlob,pendingName);
+  hide();
+  toast("Saved to Downloads \u00B7 "+pendingName,3600);
+});
 function csvBlob(text){ return new Blob(["\uFEFF"+text],{type:"text/csv;charset=utf-8;"}); }
 function q(s){ return '"'+String(s==null?"":s).replace(/"/g,'""')+'"'; }
 
@@ -1419,18 +1479,14 @@ el("btnExport").addEventListener("click",function(){
       q(headOf(t)),q(t.detail),q(modeName(t.account)),
       t.type==="in"?plain(t.amount):"", t.type==="out"?plain(t.amount):"", plain(run)].join(","));
   });
-  deliver(csvBlob(out.join("\r\n")),"cashbook-all-"+ymd(new Date())+".csv","Cashbook backup")
-    .then(function(r){ if(r!=="cancelled") toast(r==="shared"?"Shared":"Saved to Downloads"); });
+  deliver(csvBlob(out.join("\r\n")),"cashbook-all-"+ymd(new Date())+".csv","Cashbook backup");
 });
 
 /* ================= backup & restore ================= */
 el("btnBackup").addEventListener("click",function(){
   var payload={ app:"cashbook", version:1, savedAt:new Date().toISOString(), data:state };
   var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
-  deliver(blob,"cashbook-backup-"+ymd(new Date())+".json","Cashbook full backup")
-    .then(function(r){
-      if(r!=="cancelled") toast(r==="shared"?"Backup shared":"Backup saved to Downloads",3000);
-    });
+  deliver(blob,"cashbook-backup-"+ymd(new Date())+".json","Cashbook full backup");
 });
 el("btnRestore").addEventListener("click",function(){ el("restoreFile").click(); });
 el("restoreFile").addEventListener("change",function(){
@@ -1736,9 +1792,7 @@ el("btnRepCsv").addEventListener("click",function(){
   lastTable.rows.forEach(function(r){ lines.push(r.map(q).join(",")); });
   lines.push(lastTable.totals.map(q).join(","));
   deliver(csvBlob(lines.join("\r\n")),"cashbook-"+repType+"-"+ymd(new Date())+".csv",
-    "Cashbook report").then(function(r){
-    if(r!=="cancelled") toast(r==="shared"?"Shared":"Saved to Downloads");
-  });
+    "Cashbook report");
 });
 
 /* ================= PDF writer ================= */
@@ -1947,13 +2001,10 @@ el("btnRepPdf").addEventListener("click",function(){
     sum:lastSummary, cols:lastTable.cols, rows:lastTable.rows, totals:lastTable.totals,
     foot:"Generated "+shortDate(new Date())+" "+timeLabel(new Date())
   });
-  deliver(blob,"cashbook-"+repType+"-"+ymd(new Date())+".pdf","Cashbook report").then(function(r){
-    if(r==="cancelled") return;
-    toast(r==="shared"?"Choose where to open it":"PDF saved to Downloads",3000);
-    if(pdfLost) setTimeout(function(){
-      toast("Some non-English text couldn't be drawn in the PDF \u2014 use Excel for that",5000);
-    },3200);
-  });
+  deliver(blob,"cashbook-"+repType+"-"+ymd(new Date())+".pdf","Cashbook report");
+  if(pdfLost) setTimeout(function(){
+    toast("Some non-English text couldn't be drawn in the PDF \u2014 use Excel for that",5000);
+  },3400);
 });
 
 /* ================= import ================= */
