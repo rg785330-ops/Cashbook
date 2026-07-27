@@ -201,19 +201,6 @@ svg{display:block}
 .tot-v.out{color:var(--red)}
 .tot-card.net .tot-v{font-size:25px;color:#fff}
 
-/* ============ manage row ============ */
-.mrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
-  padding:15px 16px;cursor:pointer;color:inherit;background:var(--white);
-  border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
-.mrow:active{background:var(--g-50)}
-.mrow-ico{width:36px;height:36px;border-radius:12px;background:var(--g-100);
-  display:flex;align-items:center;justify-content:center;flex:0 0 auto;color:var(--g-dark)}
-.mrow-ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;
-  stroke-linecap:round;stroke-linejoin:round}
-.mrow-t{font-size:14.5px;font-weight:700}
-.mrow-d{font-size:11.5px;color:var(--faint);line-height:1.3}
-.mrow-x{color:var(--faint);font-size:20px;font-weight:300}
-
 .repfoot{display:grid;grid-template-columns:1fr 1fr;gap:11px;
   padding:12px 16px calc(12px + var(--sb));
   background:linear-gradient(to top,#fff 60%,rgba(255,255,255,0))}
@@ -321,10 +308,13 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
     <div class="hero-top">
       <span class="wordmark">Cashbook</span>
       <span class="hero-btns">
-        <button class="hbtn" id="btnReports">
-          <svg viewBox="0 0 24 24"><path d="M3 20h18M7 16V9M12 16V4M17 16v-5"/></svg>Reports
+        <button class="hbtn sq" id="btnHeads" aria-label="Heads management" title="Heads management">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h11M4 18h7"/><path d="M18 14v7M14.5 17.5h7"/></svg>
         </button>
-        <button class="hbtn sq" id="btnSettings" aria-label="Settings">
+        <button class="hbtn sq" id="btnReports" aria-label="Reports" title="Reports">
+          <svg viewBox="0 0 24 24"><path d="M3 20h18M7 16V9M12 16V4M17 16v-5"/></svg>
+        </button>
+        <button class="hbtn sq" id="btnSettings" aria-label="Settings" title="Settings">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
         </button>
       </span>
@@ -426,17 +416,6 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
       <div class="card tot-card net"><span class="tot-l">Final balance</span><span class="tot-v num" id="tNet">0</span></div>
     </div>
 
-    <div class="sec-head">Manage</div>
-    <button class="mrow" id="btnHeads">
-      <span class="mrow-ico">
-        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/><path d="M17 15v6M14 18h6"/></svg>
-      </span>
-      <span style="flex:1;min-width:0">
-        <span class="mrow-t" style="display:block">Heads management</span>
-        <span class="mrow-d">Create new categories or rename existing ones</span>
-      </span>
-      <span class="mrow-x">&rsaquo;</span>
-    </button>
   </div>
 
   <div class="repfoot">
@@ -876,7 +855,9 @@ function renderHeads(){
   }).join("");
 }
 el("btnHeads").addEventListener("click",function(){ renderHeads(); show("headsSheet"); });
-el("btnHeadsDone").addEventListener("click",function(){ hide(); refreshReport(); });
+el("btnHeadsDone").addEventListener("click",function(){
+  hide(); if(curView==="reports") refreshReport();
+});
 
 el("btnAddHead").addEventListener("click",function(){
   var v=el("newHead").value.trim();
@@ -1285,10 +1266,10 @@ var GREEN=".06 .61 .35", RED=".85 .19 .15", INK=".09 .15 .17",
 
 function buildPdf(o){
   pdfLost=false;
-  var PW=842,PH=595,M=32,avail=PW-M*2;
+  var PW=595,PH=842,M=30,avail=PW-M*2;
   var scale=avail/o.cols.reduce(function(a,c){ return a+c.w; },0);
   var W=o.cols.map(function(c){ return c.w*scale; });
-  var HDR=20,ROW=17,FS=8.4,HFS=8,PADX=6;
+  var HDR=19,ROW=16,FS=7.6,HFS=7.2,PADX=5;
   var headBlock=118, footH=20;
 
   var pages=[],cursor=0,first=true;
@@ -1334,19 +1315,19 @@ function buildPdf(o){
     }
 
     if(pg.first){
-      txt(o.title,M,PH-M-14,15,true,INK);
-      txt(o.meta,M,PH-M-29,8.4,false,GREY);
+      txt(o.title,M,PH-M-13,13.5,true,INK);
+      txt(fit(o.meta,avail,7.4,false),M,PH-M-26,7.4,false,GREY);
       /* three summary boxes */
-      var bw=(avail-20)/3, by=PH-M-84, bh=42;
+      var bw=(avail-16)/3, by=PH-M-80, bh=40;
       [["Total cash in",money(o.sum.in),GREEN],
        ["Total cash out",money(o.sum.out),RED],
        ["Final balance",money(o.sum.final),INK]].forEach(function(bx,i){
-        var x=M+i*(bw+10);
+        var x=M+i*(bw+8);
         box(x,by,bw,bh,LINE,.6);
-        txt(bx[0],x+10,by+bh-15,8,false,GREY);
-        txt(bx[1],x+10,by+9,15,true,bx[2]);
+        txt(bx[0],x+8,by+bh-14,7.4,false,GREY);
+        txt(fit(bx[1],bw-16,13,true),x+8,by+9,13,true,bx[2]);
       });
-      txt("Total no. of entries: "+o.sum.count,M,PH-M-headBlock+9,9,false,INK);
+      txt("Total no. of entries: "+o.sum.count,M,PH-M-headBlock+8,8.2,false,INK);
     }
 
     rect(M,y-HDR,avail,HDR,HEADBG);
@@ -1707,6 +1688,31 @@ document.addEventListener("keydown",function(e){
   if(sheetStack.length) hide();
   else if(curView==="reports") goto("home");
 });
+
+/* ================= Android back button =================
+   A guard entry sits on top of the history stack at all times. Each back
+   press pops it, we handle the press ourselves, then push a fresh guard.
+   On the home screen with nothing open, the first press only arms an exit;
+   the second within two seconds lets the press through and the app closes. */
+var exitArmed=false, exitTimer=null;
+function pushGuard(){
+  try{ history.pushState({cb:1},""); }catch(e){}
+}
+window.addEventListener("popstate",function(){
+  if(sheetStack.length){ hide(); pushGuard(); return; }
+  if(curView==="reports"){ goto("home"); pushGuard(); return; }
+  if(exitArmed){
+    clearTimeout(exitTimer); exitArmed=false;
+    try{ history.go(-1); }catch(e){}
+    return;
+  }
+  exitArmed=true;
+  toast("Press back again to exit",2000);
+  pushGuard();
+  clearTimeout(exitTimer);
+  exitTimer=setTimeout(function(){ exitArmed=false; },2000);
+});
+pushGuard();
 
 /* ================= offline ================= */
 if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
