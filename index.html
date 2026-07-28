@@ -50,22 +50,44 @@ svg{display:block}
 
 .view{display:none;flex-direction:column;height:100%}
 .view.active{display:flex}
-#scroll,#repScroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 18px}
+#homeView{position:relative}
+#scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 18px}
+#repScroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 18px}
+.pad{padding:0 16px}
 
 /* ============ home header ============ */
-/* --c runs 0 (expanded) to 1 (collapsed) and is driven by the scroll position,
-   so the header shrinks under your finger rather than snapping. */
-.hero{
-  background:var(--grad);color:#fff;
-  padding:calc(12px + var(--st)) 18px calc(18px - 8px*var(--c));
-  border-radius:0 0 calc(26px - 12px*var(--c)) calc(26px - 12px*var(--c));
-  box-shadow:0 calc(6px - 3px*var(--c)) 22px rgba(11,124,68,.24);
-  will-change:padding;
+/* The balance panel scrolls away with the content — no JS, no layout animation.
+   A compact bar sits above it and only ever changes opacity, which the
+   compositor handles without re-laying out the page. */
+.topbar-h{
+  position:absolute;top:0;left:0;right:0;z-index:6;
+  display:flex;align-items:center;gap:12px;
+  padding:calc(10px + var(--st)) 16px 10px;
+  color:#fff;pointer-events:none;
 }
-.hero-top{display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:calc(15px - 8px*var(--c))}
+.topbar-h>*{pointer-events:auto}
+.topbar-h::before{
+  content:"";position:absolute;inset:0;background:var(--grad);
+  box-shadow:0 4px 18px rgba(11,124,68,.26);
+  opacity:0;transition:opacity .26s ease;
+}
+.topbar-h.compact::before{opacity:1}
+.tb-left{position:relative;flex:1;min-width:0;height:26px}
+.tb-slot{position:absolute;inset:0;display:flex;align-items:center;
+  transition:opacity .22s ease;pointer-events:none}
+.tb-brand{opacity:1}
+.tb-compact{opacity:0;gap:9px;overflow-x:auto;
+  scrollbar-width:none;-ms-overflow-style:none}
+.tb-compact::-webkit-scrollbar{display:none}
+.topbar-h.compact .tb-brand{opacity:0}
+.topbar-h.compact .tb-compact{opacity:1;pointer-events:auto}
 .wordmark{font-size:11.5px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;opacity:.92}
-.hero-btns{display:flex;gap:8px}
+.tb-total{font-size:16px;font-weight:800;letter-spacing:-.02em;white-space:nowrap;flex:0 0 auto}
+.tb-chip{flex:0 0 auto;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.26);
+  border-radius:8px;padding:3px 8px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.tb-chip b{font-weight:800;margin-left:5px}
+
+.hero-btns{display:flex;gap:8px;flex:0 0 auto}
 .hbtn{
   display:flex;align-items:center;gap:6px;cursor:pointer;color:#fff;
   background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);
@@ -76,26 +98,26 @@ svg{display:block}
 .hbtn.sq{padding:7px 8px}
 .hbtn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round}
+
+.hero{
+  background:var(--grad);color:#fff;
+  padding:calc(58px + var(--st)) 18px 20px;
+  border-radius:0 0 26px 26px;
+}
 .hero-lab{display:block;font-size:10.5px;font-weight:700;letter-spacing:.13em;
-  text-transform:uppercase;opacity:calc(1 - 2.2*var(--c));
-  height:calc(15px - 15px*var(--c));overflow:hidden}
-.hero-total{font-size:calc(36px - 17px*var(--c));font-weight:800;letter-spacing:-.035em;
-  margin:calc(3px - 3px*var(--c)) 0 calc(15px - 9px*var(--c));line-height:1.05}
-/* one scrollable row, so any number of payment modes fits */
-.hero-split{display:flex;gap:calc(9px - 3px*var(--c));overflow-x:auto;
+  text-transform:uppercase;opacity:.85}
+.hero-total{font-size:36px;font-weight:800;letter-spacing:-.035em;margin:3px 0 16px;line-height:1.05}
+.hero-split{display:flex;gap:9px;overflow-x:auto;
   scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
 .hero-split::-webkit-scrollbar{display:none}
 .hs{flex:0 0 auto;min-width:calc(47% - 6px);
   background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.22);
-  border-radius:calc(13px - 4px*var(--c));
-  padding:calc(10px - 5px*var(--c)) calc(12px - 3px*var(--c))}
-.hs-l{font-size:calc(10px - 1.2*var(--c)*1px);font-weight:700;letter-spacing:.1em;
-  text-transform:uppercase;opacity:.85;white-space:nowrap}
-.hs-v{font-size:calc(18px - 5px*var(--c));font-weight:700;
-  margin-top:calc(3px - 3px*var(--c));display:block;white-space:nowrap}
+  border-radius:13px;padding:10px 12px}
+.hs-l{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  opacity:.85;white-space:nowrap}
+.hs-v{font-size:18px;font-weight:700;margin-top:3px;display:block;white-space:nowrap}
 
-.monthwrap{padding:0 16px;overflow:hidden;
-  height:calc(76px - 76px*var(--c));opacity:calc(1 - 2.4*var(--c))}
+.monthwrap{padding:14px 16px 0}
 
 /* ============ search ============ */
 .searchwrap{padding:14px 16px 0;position:relative}
@@ -417,43 +439,49 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
 
 <!-- ==================== HOME ==================== -->
 <div class="view active" id="homeView">
-  <div class="hero">
-    <div class="hero-top">
-      <span class="wordmark">Cashbook</span>
-      <span class="hero-btns">
-        <button class="hbtn sq" id="btnHeads" aria-label="Heads management" title="Heads management">
-          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h11M4 18h7"/><path d="M18 14v7M14.5 17.5h7"/></svg>
-        </button>
-        <button class="hbtn sq" id="btnReports" aria-label="Reports" title="Reports">
-          <svg viewBox="0 0 24 24"><path d="M3 20h18M7 16V9M12 16V4M17 16v-5"/></svg>
-        </button>
-        <button class="hbtn sq" id="btnSettings" aria-label="Settings" title="Settings">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
-        </button>
-      </span>
+  <div class="topbar-h" id="topBar">
+    <div class="tb-left">
+      <div class="tb-slot tb-brand"><span class="wordmark">Cashbook</span></div>
+      <div class="tb-slot tb-compact" id="tbCompact"></div>
     </div>
-    <span class="hero-lab">Total balance</span>
-    <div class="hero-total num" id="balTotal">0</div>
-    <div class="hero-split" id="modeCards"></div>
-  </div>
-
-  <div class="monthwrap">
-    <div class="monthstrip">
-      <div class="ms"><span class="ms-l" id="msLabel">This month in</span><span class="ms-v in num" id="msIn">0</span></div>
-      <div class="ms"><span class="ms-l">This month out</span><span class="ms-v out num" id="msOut">0</span></div>
-    </div>
-  </div>
-
-  <div class="searchwrap">
-    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-    <input id="homeSearch" type="search" placeholder="Search remark or category…" autocomplete="off">
-    <button class="clearx" id="clearSearch" aria-label="Clear search">&times;</button>
+    <span class="hero-btns">
+      <button class="hbtn sq" id="btnHeads" aria-label="Heads management" title="Heads management">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h11M4 18h7"/><path d="M18 14v7M14.5 17.5h7"/></svg>
+      </button>
+      <button class="hbtn sq" id="btnReports" aria-label="Reports" title="Reports">
+        <svg viewBox="0 0 24 24"><path d="M3 20h18M7 16V9M12 16V4M17 16v-5"/></svg>
+      </button>
+      <button class="hbtn sq" id="btnSettings" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+      </button>
+    </span>
   </div>
 
   <div id="scroll">
-    <div id="quickWrap"></div>
-    <div class="sec-head" id="listHead">Recent entries</div>
-    <div id="list"></div>
+    <div class="hero">
+      <span class="hero-lab">Total balance</span>
+      <div class="hero-total num" id="balTotal">0</div>
+      <div class="hero-split" id="modeCards"></div>
+    </div>
+
+    <div class="monthwrap">
+      <div class="monthstrip">
+        <div class="ms"><span class="ms-l" id="msLabel">This month in</span><span class="ms-v in num" id="msIn">0</span></div>
+        <div class="ms"><span class="ms-l">This month out</span><span class="ms-v out num" id="msOut">0</span></div>
+      </div>
+    </div>
+
+    <div class="searchwrap">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="homeSearch" type="search" placeholder="Search remark or category…" autocomplete="off">
+      <button class="clearx" id="clearSearch" aria-label="Clear search">&times;</button>
+    </div>
+
+    <div class="pad">
+      <div id="quickWrap"></div>
+      <div class="sec-head" id="listHead">Recent entries</div>
+      <div id="list"></div>
+    </div>
   </div>
 
   <div class="actions">
@@ -903,6 +931,13 @@ function render(){
   }).join("");
   stagger(el("modeCards"),".hs",50);
 
+  el("tbCompact").innerHTML=
+    '<span class="tb-total num">'+money(b.total)+'</span>'+
+    state.modes.map(function(m){
+      return '<span class="tb-chip">'+esc(m.name)+
+        '<b class="num">'+money(b.per[m.id]||0)+'</b></span>';
+    }).join("");
+
   /* this month, so the headline balance has context */
   var now=new Date(), mstart=new Date(now.getFullYear(),now.getMonth(),1), mi=0, mo=0;
   state.txns.forEach(function(t){
@@ -1059,20 +1094,18 @@ el("quickWrap").addEventListener("click",function(e){
 });
 
 /* ================= collapsing header =================
-   Shrinks the balance panel as the entry list scrolls, so the entries get
-   the screen and the balances stay visible as small boxes at the top. */
+   One class toggle, with a gap between the on and off thresholds so a scroll
+   that hovers around the boundary can't flicker. CSS handles the fade; nothing
+   is written per frame, and no layout property is animated. */
 var recheckHeader=function(){};
 (function(){
-  var sc=el("scroll"), ticking=false, last=-1, ROOT=document.documentElement;
-  var RANGE=130;                        /* scroll distance to go fully compact */
+  var sc=el("scroll"), bar=el("topBar"), ticking=false, on=false;
+  var ON=96, OFF=64;
   function apply(){
     ticking=false;
     var y=(sc&&sc.scrollTop)||0;
-    var c=y/RANGE; if(c<0) c=0; if(c>1) c=1;
-    c=Math.round(c*50)/50;              /* 2% steps: smooth, far less reflow */
-    if(c===last) return;
-    last=c;
-    if(ROOT&&ROOT.style) ROOT.style.setProperty("--c",c);
+    if(!on && y>ON){ on=true; bar.classList.add("compact"); }
+    else if(on && y<OFF){ on=false; bar.classList.remove("compact"); }
   }
   if(sc&&sc.addEventListener){
     sc.addEventListener("scroll",function(){
