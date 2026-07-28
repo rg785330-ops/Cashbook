@@ -33,6 +33,7 @@
   --grad:linear-gradient(135deg,#12B667 0%,#0F9D58 55%,#0B7C44 100%);
   --grad-red:linear-gradient(135deg,#E8483C 0%,#D93025 60%,#B3241B 100%);
   --shadow:0 1px 2px rgba(15,60,40,.06),0 4px 14px rgba(15,60,40,.07);
+  --c:0;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%}
@@ -52,13 +53,17 @@ svg{display:block}
 #scroll,#repScroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 18px}
 
 /* ============ home header ============ */
+/* --c runs 0 (expanded) to 1 (collapsed) and is driven by the scroll position,
+   so the header shrinks under your finger rather than snapping. */
 .hero{
   background:var(--grad);color:#fff;
-  padding:calc(14px + var(--st)) 18px 20px;
-  border-radius:0 0 26px 26px;
-  box-shadow:0 6px 22px rgba(11,124,68,.24);
+  padding:calc(12px + var(--st)) 18px calc(18px - 8px*var(--c));
+  border-radius:0 0 calc(26px - 12px*var(--c)) calc(26px - 12px*var(--c));
+  box-shadow:0 calc(6px - 3px*var(--c)) 22px rgba(11,124,68,.24);
+  will-change:padding;
 }
-.hero-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.hero-top{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:calc(15px - 8px*var(--c))}
 .wordmark{font-size:11.5px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;opacity:.92}
 .hero-btns{display:flex;gap:8px}
 .hbtn{
@@ -71,13 +76,26 @@ svg{display:block}
 .hbtn.sq{padding:7px 8px}
 .hbtn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round}
-.hero-lab{font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;opacity:.85}
-.hero-total{font-size:36px;font-weight:800;letter-spacing:-.035em;margin:3px 0 16px;line-height:1}
-.hero-split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.hs{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.22);
-  border-radius:13px;padding:10px 12px}
-.hs-l{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.85}
-.hs-v{font-size:18px;font-weight:700;margin-top:3px;display:block}
+.hero-lab{display:block;font-size:10.5px;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;opacity:calc(1 - 2.2*var(--c));
+  height:calc(15px - 15px*var(--c));overflow:hidden}
+.hero-total{font-size:calc(36px - 17px*var(--c));font-weight:800;letter-spacing:-.035em;
+  margin:calc(3px - 3px*var(--c)) 0 calc(15px - 9px*var(--c));line-height:1.05}
+/* one scrollable row, so any number of payment modes fits */
+.hero-split{display:flex;gap:calc(9px - 3px*var(--c));overflow-x:auto;
+  scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
+.hero-split::-webkit-scrollbar{display:none}
+.hs{flex:0 0 auto;min-width:calc(47% - 6px);
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.22);
+  border-radius:calc(13px - 4px*var(--c));
+  padding:calc(10px - 5px*var(--c)) calc(12px - 3px*var(--c))}
+.hs-l{font-size:calc(10px - 1.2*var(--c)*1px);font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;opacity:.85;white-space:nowrap}
+.hs-v{font-size:calc(18px - 5px*var(--c));font-weight:700;
+  margin-top:calc(3px - 3px*var(--c));display:block;white-space:nowrap}
+
+.monthwrap{padding:0 16px;overflow:hidden;
+  height:calc(76px - 76px*var(--c));opacity:calc(1 - 2.4*var(--c))}
 
 /* ============ search ============ */
 .searchwrap{padding:14px 16px 0;position:relative}
@@ -419,7 +437,7 @@ select.f-in{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50
     <div class="hero-split" id="modeCards"></div>
   </div>
 
-  <div style="padding:0 16px">
+  <div class="monthwrap">
     <div class="monthstrip">
       <div class="ms"><span class="ms-l" id="msLabel">This month in</span><span class="ms-v in num" id="msIn">0</span></div>
       <div class="ms"><span class="ms-l">This month out</span><span class="ms-v out num" id="msOut">0</span></div>
@@ -953,6 +971,7 @@ function render(){
   });
   list.innerHTML=html;
   stagger(list,".daygroup",45);
+  recheckHeader();
   if(lastAdded){
     var r=list.querySelector('.row[data-id="'+lastAdded+'"]');
     if(r) r.classList.add("justadded");
@@ -1038,6 +1057,32 @@ el("quickWrap").addEventListener("click",function(e){
     toast("Removed");
   });
 });
+
+/* ================= collapsing header =================
+   Shrinks the balance panel as the entry list scrolls, so the entries get
+   the screen and the balances stay visible as small boxes at the top. */
+var recheckHeader=function(){};
+(function(){
+  var sc=el("scroll"), ticking=false, last=-1, ROOT=document.documentElement;
+  var RANGE=130;                        /* scroll distance to go fully compact */
+  function apply(){
+    ticking=false;
+    var y=(sc&&sc.scrollTop)||0;
+    var c=y/RANGE; if(c<0) c=0; if(c>1) c=1;
+    c=Math.round(c*50)/50;              /* 2% steps: smooth, far less reflow */
+    if(c===last) return;
+    last=c;
+    if(ROOT&&ROOT.style) ROOT.style.setProperty("--c",c);
+  }
+  if(sc&&sc.addEventListener){
+    sc.addEventListener("scroll",function(){
+      if(ticking) return;
+      ticking=true;
+      requestAnimationFrame(apply);
+    },{passive:true});
+  }
+  recheckHeader=apply;
+})();
 
 /* ================= toast ================= */
 var toastTimer;
@@ -1529,6 +1574,30 @@ el("restoreFile").addEventListener("change",function(){
    Scope is drive.appdata: this app can only see files it created itself,
    never anything else in the account. No server involved. */
 
+/* A Web OAuth client ID always looks like:
+   123456789012-abc123def456.apps.googleusercontent.com
+   Catching a bad one here beats Google's opaque "invalid_client" page. */
+var CLIENT_RE=/^\d{6,}-[A-Za-z0-9_]{10,}\.apps\.googleusercontent\.com$/;
+function cleanClientId(v){
+  return String(v||"")
+    .replace(/[\u200B-\u200D\uFEFF]/g,"")   /* invisible characters from copy-paste */
+    .replace(/["'\s]/g,"")
+    .trim();
+}
+function clientIdProblem(v){
+  if(!v) return "Paste your Client ID first.";
+  if(CLIENT_RE.test(v)) return null;
+  if(/apps\.googleusercontent\.com$/.test(v))
+    return "That ID is incomplete \u2014 it must start with the project number, then a hyphen. Copy the whole thing.";
+  if(/^\d+$/.test(v))
+    return "That's a project number, not a Client ID. You need the value ending .apps.googleusercontent.com";
+  if(/^GOCSPX-/.test(v))
+    return "That's the Client secret. You need the Client ID, ending .apps.googleusercontent.com";
+  if(/^AIza/.test(v))
+    return "That's an API key. You need an OAuth Client ID, ending .apps.googleusercontent.com";
+  return "That doesn't look like a Web Client ID. It should end in .apps.googleusercontent.com";
+}
+
 var GKEY="cashbook.google";
 var gcfg=(function(){
   try{ return JSON.parse(localStorage.getItem(GKEY))||{}; }catch(e){ return {}; }
@@ -1707,14 +1776,19 @@ function scheduleSync(){
 }
 
 el("gClientId").addEventListener("change",function(){
-  gcfg.clientId=this.value.trim();
-  gcfg.token=null; gcfg.exp=0;
-  gsave(); gRefreshUi();
+  var v=cleanClientId(this.value);
+  this.value=v;
+  gcfg.clientId=v; gcfg.token=null; gcfg.exp=0;
+  gsave();
+  var p=clientIdProblem(v);
+  if(p) gStatus(p,"bad"); else gRefreshUi();
 });
 el("btnGConnect").addEventListener("click",function(){
-  gcfg.clientId=el("gClientId").value.trim();
-  if(!gcfg.clientId){ gStatus("Paste your Client ID first.","bad"); return; }
-  gcfg.token=null; gcfg.exp=0; gsave();
+  var v=cleanClientId(el("gClientId").value);
+  el("gClientId").value=v;
+  var p=clientIdProblem(v);
+  if(p){ gStatus(p,"bad"); return; }
+  gcfg.clientId=v; gcfg.token=null; gcfg.exp=0; gsave();
   gStatus("Opening Google sign-in\u2026");
   ensureToken(true).then(function(){
     gRefreshUi(); toast("Google account connected");
@@ -1722,7 +1796,7 @@ el("btnGConnect").addEventListener("click",function(){
   }).catch(function(e){
     gStatus(e&&e.message==="offline"
       ? "Couldn't load Google sign-in — check your connection."
-      : "Sign-in didn't complete.","bad");
+      : "Sign-in didn't complete. If Google said \u201Cinvalid_client\u201D, the Client ID is wrong or its project was deleted.","bad");
   });
 });
 el("btnGSync").addEventListener("click",function(){ syncNow(true); });
